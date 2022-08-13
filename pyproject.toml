@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "humps", "pymongo"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lighttest"
+version = "0.0.5"
+authors = [
+  { name= "David Toth", email= "tothlldavid@gmail.com" },
+]
+description = "tools for testing"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/pypa/sampleproject"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
