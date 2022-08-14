@@ -28,3 +28,11 @@ class calls:
         end_time = perf_counter()
         self.response_time = round(end_time - start_time, 2)
         return self
+
+
+    def put_call(self, uriPath: str, payload):
+        start_time = perf_counter()
+        self.response = requests.post(cd.base_url + uriPath, headers=cd.get_headers(), json=payload)
+        end_time = perf_counter()
+        self.response_time = round(end_time - start_time, 2)
+        return self

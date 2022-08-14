@@ -5,7 +5,7 @@ format, which is create and send a json object to the specified database's colle
 import datetime
 import json
 from lighttest import datashare
-from dtools_supplies import timers
+from lighttest_supplies import timers
 from lighttest import error_log
 
 teststart: float

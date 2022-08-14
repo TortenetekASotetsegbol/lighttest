@@ -8,8 +8,8 @@ import requests
 from lighttest import mongo_db as mdb
 from lighttest import general_calls
 from lighttest import error_log as el
-from dtools_supplies.general import boolsum
-from dtools_supplies import encoding as en
+from lighttest_supplies.general import boolsum
+from lighttest_supplies import encoding as en
 
 db_e = mdb.testcase_fields
 default_timelimit_in_seconds = 1
