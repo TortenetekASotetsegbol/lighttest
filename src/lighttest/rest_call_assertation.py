@@ -5,9 +5,9 @@ A rest apis hívások ellenőrzése
 import json
 
 import requests
-from lighttest import mongo_db as mdb
+from lighttest import mongo_datas as mdb
 from lighttest import general_calls
-from lighttest import error_log as el
+from lighttest.error_log import ErrorLog as el
 from lighttest_supplies.general import boolsum
 from lighttest_supplies import encoding as en
 
@@ -16,7 +16,7 @@ default_timelimit_in_seconds = 1
 
 
 class Assertation:
-    def __init__(self, resp: general_calls.calls, id: str, accepted_status_code: int = 200,
+    def __init__(self, resp: general_calls.Calls, id: str, accepted_status_code: int = 200,
                  error_desc: str = "", properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
                  timelimit_in_seconds=1):
         self.resp = resp
@@ -31,44 +31,52 @@ class Assertation:
         good_perf = self.resp.response_time < self.timelimit_in_seconds
         positive = positivity == db_e.POSITIVITY_POSITIVE.value
         negative = positivity == db_e.POSITIVITY_NEGATIVE.value
-        status_code_accepted = self.resp.response.status_code == self.accepted_status_code
+        status_code_accepted = self.resp.status_code == self.accepted_status_code
         succesful = (positive and status_code_accepted and good_perf) or (
                 negative and not status_code_accepted and good_perf)
         return succesful
 
 
-def assertion(resp: general_calls.calls, id: str, accepted_status_code: int = 200,
+def assertion(resp: general_calls.Calls, id: str, accepted_status_code: int = 200,
               error_desc: str = "",
               properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value}, timelimit_in_seconds=1,
+              raise_error=False,
               **extra_asserts):
-    '''
-    :param resp: egy requests objekt, ami tartalmazza a requestet és response minden adatát
-    :param properties: a mongodb-ből kapott teszteset tulajdonságait tartalmazza, mint pozittivitás, terület, stb.
-    :param accepted_status_code: a pozitív teszteset esetén elfogadott státuszkód
-    :param error_desc: brief description of the error, if the case failed
-    :param extra_asserts: assertions, that necessaries for the case. It van be zero or one or multiple assertions,
-    but every assertattion must return a bool variabel
-    :return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
-    '''
+    """
+
+
+    Arguments:
+        resp: egy requests objekt, ami tartalmazza a requestet és response minden adatát
+        properties: a mongodb-ből kapott teszteset tulajdonságait tartalmazza, mint pozittivitás, terület, stb.
+        accepted_status_code: a pozitív teszteset esetén elfogadott státuszkód
+        error_desc: brief description of the error, if the case failed
+        extra_asserts: assertions, that necessaries for the case. It can be zero or one or multiple assertions,
+        but every assertattion must return a bool variabel
+
+    Return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
+    """
     ass = Assertation(resp=resp, id=id, accepted_status_code=accepted_status_code, error_desc=error_desc,
                       properties=properties, timelimit_in_seconds=timelimit_in_seconds)
 
     # global sikeres
-    request = resp.response.request.body
+    request = resp.request
     el.total_case_count_inc()
     succesful = ass.succesful() and boolsum(extra_asserts)
 
     if not succesful:
-        create_error_record(req_payload=request, req_response=resp.response.json(),
-                            statuscode=resp.response.status_code, perf=resp.response_time, properties=properties, id=id,
+        create_error_record(req_payload=request, req_response=resp.response_json,
+                            statuscode=resp.status_code, perf=resp.response_time, properties=properties, id=id,
                             error_desc=error_desc)
+        if raise_error:
+            el.result_to_db()
+            raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
     return succesful
 
 
 def create_error_record(req_payload: json, req_response: json, statuscode: int, perf: float, properties: json, id: str,
                         error_desc: str = ""):
-    '''create an error record from the collected datas'''
+    """create an error record from the collected datas"""
     error = error_inf(req_payload=req_payload, req_response=req_response,
                       statuscode=statuscode, perf=perf, properties=properties, id=id, error_desc=error_desc)
     el.add_error(error.get_error())
@@ -87,7 +95,7 @@ class error_inf:
 
     def __init__(self, req_payload: json, req_response: json, statuscode: int, perf: float, properties: json, id: str,
                  error_desc: str = ""):
-        self.req_payload = en.binary_json_to_json(req_payload)
+        self.req_payload = req_payload
         self.req_response = req_response
         self.statuscode = statuscode
         self.perf = perf
