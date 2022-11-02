@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "humps", "pymongo", "sqlalchemy","aiohttp","asyncio", "selenium", "webdriver_manager"]
+requires = ["setuptools>=61.0", "humps", "pymongo", "sqlalchemy","aiohttp","asyncio", "selenium", "webdriver_manager", "numpy", "pandas", "seaborn", "matplotlib"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lighttest"
-version = "0.2.3"
+version = "0.4.2"
 authors = [
   { name= "David Toth", email= "tothlldavid@gmail.com" },
 ]

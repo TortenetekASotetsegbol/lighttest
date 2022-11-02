@@ -2,6 +2,7 @@ LICENSE.txt
 README.md
 pyproject.toml
 src/lighttest/__init__.py
+src/lighttest/charts.py
 src/lighttest/common_rest_call_datas.py
 src/lighttest/core_interface_methods.py
 src/lighttest/error_log.py

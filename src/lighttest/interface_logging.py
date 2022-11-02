@@ -5,8 +5,8 @@ from lighttest_supplies import date_methods
 from os import makedirs
 import datetime
 from selenium.common.exceptions import WebDriverException
-from src.lighttest.error_log import ErrorLog
-from src.lighttest.core_interface_methods import CaseStep
+from lighttest.error_log import ErrorLog
+from lighttest.core_interface_methods import CaseStep
 from dataclasses import KW_ONLY
 
 
@@ -54,7 +54,7 @@ class Logging():
         try:
             makedirs(file_path)
         except FileExistsError as error:
-            print("multiple errors in the same hour. What an amazing day!")
+            print("multiple backend_errors in the same hour. What an amazing day!")
 
         MiUsIn.driver.save_screenshot(fr'{file_path}\{file_name}')
 

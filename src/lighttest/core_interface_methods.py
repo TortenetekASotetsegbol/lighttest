@@ -6,7 +6,7 @@ from os import makedirs
 
 from lighttest.error_log import ErrorLog
 from lighttest_supplies import date_methods
-from lighttest_supplies.timers import bomb
+from lighttest_supplies.timers import Utimer
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, \
@@ -22,6 +22,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import color
 from selenium.common import exceptions
 from inspect import signature
+from lighttest_supplies.general import create_logging_structure, create_logging_directory, create_directory
+from pathlib import Path
 
 
 def collect_data(mimic_type: str):
@@ -29,8 +31,8 @@ def collect_data(mimic_type: str):
 
         def collecting_data(*args, **kwargs):
 
-            case_obj: MiUsIn = args[0]
-            if case_obj.casebreak:
+            case_object: MiUsIn = args[0]
+            if case_object.casebreak:
                 return None
 
             if "step_description" not in kwargs.keys():
@@ -45,12 +47,12 @@ def collect_data(mimic_type: str):
             step_failed: bool = False
             new_error: str = ""
             try:
-                case_object: TestStep = mimic_fun(*args, **kwargs)
+                mimic_fun(*args, **kwargs)
 
             except (exceptions.WebDriverException, ValueError) as error:
-                case_obj.casebreak_alarm(major_bug=kwargs["major_bug"])
+                # case_object.casebreak_alarm(major_bug=kwargs["major_bug"])
                 new_error = error
-                ErrorLog.error_count_inc()
+                # ErrorLog.error_count_inc()
                 step_failed = True
 
             if "xpath" not in kwargs.keys():
@@ -60,8 +62,7 @@ def collect_data(mimic_type: str):
             step_datas = CaseStep(step_description=kwargs['step_description'],
                                   step_positivity=kwargs['step_positivity'],
                                   webelement_name=kwargs['webelement_name'], fatal_bug=kwargs['major_bug'],
-                                  xpath=kwargs['xpath'],
-                                  step_failed=step_failed, step_type=mimic_type, testcase=case_obj,
+                                  xpath=kwargs['xpath'], step_failed=step_failed, step_type=mimic_type,
                                   data=kwargs['data'], step_error=new_error)
             return step_datas
 
@@ -111,8 +112,6 @@ class CaseStep:
     step_type: str
     step_error: str
 
-    testcase: object
-
     data: str = ""
 
 
@@ -139,7 +138,8 @@ class MiUsIn:
     global_field_xpath: [str] = []
     global_webalert_xpath: str = None
 
-    def __init__(self, fullsize_windows=True, screenshots_container_directory: str = "C:\Screenshots"):
+    def __init__(self, case_name: str, fullsize_windows=True,
+                 screenshots_container_directory: str = "C:\Screenshots", ):
         """
         placeholder
 
@@ -152,11 +152,13 @@ class MiUsIn:
             MiUsIn.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
             MiUsIn.action_driver = ActionChains(MiUsIn.driver)
         MiUsIn.driver.implicitly_wait(time_to_wait=5)
+        self.case_name = case_name
         self.casebreak = False
         self.steps_of_reproduction: dict = {}
         self.testcase_failed: bool = False
         self.teststep_count = 0
         self.error_in_case = False
+        self.error_count: int = 0
         self.screenshots_container_directory: str = screenshots_container_directory
         self.combobox_parent_finding_method_by_xpath: [str] = []
         self.local_field_xpath: str = None
@@ -172,11 +174,21 @@ class MiUsIn:
     def close_case(self):
         """
         This method must to be on the end of every testcase. it send the collected
-        errors - and the steps led to the error - into the log.
+        frontend_errors - and the steps led to the error - into the log.
         """
         if self.error_in_case:
             ErrorLog.add_frontend_error(self.steps_of_reproduction)
+            self.stack_dict_item(updater={self.case_name: self.error_count}, current_dict=ErrorLog.error_per_frontend_case)
+            ErrorLog.error_count_inc()
+
             del self
+
+    def stack_dict_item(self, updater: dict, current_dict: dict):
+
+        if list(updater.keys())[0] not in list(current_dict.keys()):
+            current_dict.update(updater)
+        else:
+            current_dict[list(updater.keys())[0]] += updater[list(updater.keys())[0]]
 
     def set_combobox_parent_finding_method_by_xpath(self, *xpaths: str):
         """
@@ -273,26 +285,26 @@ class MiUsIn:
         This method does the preparation of the log comment from the Testcase. This makes part of the assertion,
         it analising that the teststep and the testcase weather failed or not and takes screenshots of the error.
         """
-        sig = signature(testcase_step)
 
         def asert(*args, **kwargs):
-            arguments = sig.bind(*args, **kwargs)  # these 2 steps are normally handled by func
-            arguments.apply_defaults()
+            case_object: MiUsIn = args[0]
             step_datas: CaseStep = testcase_step(*args, **kwargs)
             if step_datas is None:
                 return
-            step_datas.testcase.teststep_count += 1
+            case_object.teststep_count += 1
 
             new_step: dict = {
-                f'step {step_datas.testcase.teststep_count}': step_datas.__dict__}
+                f'step {case_object.teststep_count}': step_datas.__dict__}
 
-            step_datas.testcase.steps_of_reproduction.update(new_step)
+            case_object.steps_of_reproduction.update(new_step)
 
             if (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
                     step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
-                step_datas.testcase.casebreak_alarm(major_bug=step_datas.fatal_bug)
-                MiUsIn._take_a_screenshot(step_datas.testcase)
-                step_datas.testcase.error_in_case = True
+                case_object.error_count += 1
+                case_object.casebreak_alarm(major_bug=step_datas.fatal_bug)
+                MiUsIn._take_a_screenshot(case_object)
+
+                case_object.error_in_case = True
 
         return asert
 
@@ -310,18 +322,11 @@ class MiUsIn:
             .split("/")[0] \
             .replace(".", "_") \
             .replace("www_", "")
-        today = datetime.datetime.today()
-        date_directory_name: str = f'{today.year}_{today.month}_{today.day}'
-        hour_name: str = today.hour
-        file_name: str = f'{date_methods.get_curent_time()}.png'
 
-        file_path = fr"{testcase.screenshots_container_directory}\{project_name}\{date_directory_name}\{hour_name}"
-        try:
-            makedirs(file_path)
-        except FileExistsError as error:
-            print("multiple errors in the same hour. What an amazing day!")
-
-        MiUsIn.driver.save_screenshot(fr'{file_path}\{file_name}')
+        file_name: str = f'{date_methods.get_current_time()}.png'
+        create_logging_directory(testcase.screenshots_container_directory, project_name)
+        screenshot_path = create_logging_structure(testcase.screenshots_container_directory, project_name)
+        MiUsIn.driver.save_screenshot(f"{screenshot_path.absolute()}/{file_name}")
 
     @__testcase_logging
     @collect_data(mimic_type=Values.CONDITION_CHECK.value)
@@ -562,7 +567,7 @@ class MiUsIn:
             all_parent_xpaths.append("|".join(parent_webelement_xpaths))
         return "|".join(all_parent_xpaths)
 
-    @bomb(timeout_in_seconds=bomb_timeout)
+    @Utimer.bomb(timeout_in_seconds=bomb_timeout)
     def jump_to_recent_window_base(self) -> bool:
         if self.casebreak:
             return
@@ -699,4 +704,4 @@ class MiUsIn:
 
 # TODO complite the documentation in sphinx style
 # TODO extend the logging decorator with logging to txt and logging to only the console
-# TODO extend the logging docirator with optional charts of the result
+# TODO extend the logging docirator with optional charts of the result_informations
