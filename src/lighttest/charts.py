@@ -23,7 +23,7 @@ class Palette(Enum):
 def plot_config(generate_plot):
     @wraps(generate_plot)
     def plot(save_fig: bool = False, show_fig: bool = False, fig_directory: str = "", *args, **kwargs):
-        if len(kwargs["data"]) == 0 or sum(kwargs["data"].values()) == 0:
+        if type(kwargs["data"]) == dict and (len(kwargs["data"]) == 0 or sum(kwargs["data"].values()) == 0):
             return
 
         plt.title(kwargs["title"])
@@ -89,10 +89,10 @@ def generate_bar_chart_from_simple_dict(title: str, data: dict, size_height: flo
 
 
 @plot_config
-def generate_bar_chart_from_dataframe(title: str, dataframe: DataFrame, key_collumn: str, value_collumn: str,
+def generate_bar_chart_from_dataframe(title: str, data: DataFrame, key_collumn: str, value_collumn: str,
                                       size_height: float = 10, size_width: float = 10):
-    data: dict = dataframe.to_dict("list")
-    values: list[int] = [data[value_collumn]]
-    x_axis_elements: list[str] = [data[key_collumn]]
+    data = data.to_dict("list")
+    values: list[int] = list(data[value_collumn])
+    x_axis_elements: list[str] = list(data[key_collumn])
 
     plt.barh(y=x_axis_elements, width=values)
