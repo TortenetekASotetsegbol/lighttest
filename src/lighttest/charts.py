@@ -86,3 +86,13 @@ def generate_bar_chart_from_simple_dict(title: str, data: dict, size_height: flo
     x_axis_elements: list[str] = [key for key, value in data.items()]
 
     plt.barh(y=x_axis_elements, width=values)
+
+
+@plot_config
+def generate_bar_chart_from_dataframe(title: str, dataframe: DataFrame, key_collumn: str, value_collumn: str,
+                                      size_height: float = 10, size_width: float = 10):
+    data: dict = dataframe.to_dict("list")
+    values: list[int] = [data[value_collumn]]
+    x_axis_elements: list[str] = [data[key_collumn]]
+
+    plt.barh(y=x_axis_elements, width=values)

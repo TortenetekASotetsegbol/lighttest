@@ -13,13 +13,11 @@ from lighttest_supplies.encoding import binary_json_to_json
 from dataclasses import dataclass
 import json
 import aiohttp
-from lighttest_supplies.timers import Utimer as ut
-from aiohttp import ClientSession
-from lighttest import general_calls
-import asyncio
-
 
 # decorator
+from src.lighttest.datacollections import BackendResultDatas
+
+
 def collect_call_request_data(request_function):
     def rest_api_call(*args, **kwargs):
         call_object: Calls = args[0]
@@ -41,7 +39,7 @@ def collect_call_request_data(request_function):
 
 
 async def collect_async_data(resp: object, request: dict):
-    result: ResultDatas = copy.deepcopy(ResultDatas())
+    result: BackendResultDatas = copy.deepcopy(BackendResultDatas())
     result.headers = resp.headers
     result.status_code = resp.status
     result.request = request
@@ -95,27 +93,12 @@ async def put_req_task(uri_path, request: json, session):
         return await collect_async_data(resp=resp, request=request)
 
 
-@dataclass()
-class ResponseDatas:
-    pass
-
-
-@dataclass()
-class ResultDatas:
-    url: str = ""
-    response_time: int = 0
-    headers: json = None
-    request: json = None
-    status_code: int = None
-    response_json: json = None
-
-
 # decorator. It doesn't works :(
 def async_collect_call_request_data(request_function):
     async def async_rest_api_call(*args, **kwargs):
         with request_function(*args, **kwargs) as resp:
 
-            result: ResultDatas = copy.deepcopy(ResultDatas())
+            result: BackendResultDatas = copy.deepcopy(BackendResultDatas())
             result.headers = resp.headers
             result.status_code = resp.status
             result.request = kwargs["request"]

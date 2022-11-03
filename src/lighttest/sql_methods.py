@@ -1,36 +1,15 @@
 import sqlalchemy
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.sql import select
-from sqlalchemy.pool import Pool
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, column, table, text
+from sqlalchemy import text
 from lighttest_supplies.general_datas import TestType as tt
-from dataclasses import dataclass
 from lighttest_supplies.timers import Utimer
 from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
 from lighttest.error_log import ErrorLog, SumDatabaseTests, PerformancePost
 import inspect
 
-
-@dataclass(kw_only=True)
-class QueryResult:
-    required_time: float
-    result: CursorResult
-    query: str
-    alias: str
-    error_message: str = ""
-
-
-@dataclass(kw_only=True)
-class QueryErrorPost:
-    alias: str
-    expected_query_timelimit: float
-    required_time: float
-    query: str
-    error_message: str
-    missing_or_invalid_elements: object
-    expected_result: set
-    assertion_type: str
+from src.lighttest.datacollections import QueryResult, QueryErrorPost
 
 
 # decorator

@@ -5,54 +5,18 @@ format, which is create and send a json object to the specified database's colle
 
 import datetime
 import json
-from os import makedirs
 
 import pandas
 from lighttest import mongo_datashare
 from lighttest_supplies import timers, date_methods
 from lighttest_supplies.general import create_logging_directory, create_logging_structure
 from lighttest_supplies.date_methods import get_current_time
-from lighttest import error_log
-from dataclasses import dataclass, KW_ONLY
-from enum import Enum, unique
 from src.lighttest.charts import generate_figure_from_array, generate_pie_chart_from_simple_dict, \
     generate_bar_chart_from_simple_dict
-from src.lighttest.charts import Orientation, Palette
+from src.lighttest.charts import Orientation
 from pathlib import Path
 
-
-@dataclass(kw_only=True)
-class TestResult:
-    fast: bool
-    successful: bool
-
-
-@unique
-class ResultTypes(Enum):
-    SUCCESSFUL: str = "successful"
-    FAILED: str = "failed"
-    SLOW: str = "slow"
-    UNRECOGNISABLE = "UNRECOGNISABLE"
-
-
-@unique
-class ErrorTypes(Enum):
-    FRONTEND = "frontend"
-    BACKEND = "backend"
-    DATABASE = "database"
-
-
-@dataclass(kw_only=True)
-class BackendPerformanceStatisticPost:
-    result: str
-    request_url: str
-    response_time: float
-
-
-@dataclass(kw_only=True)
-class PerformancePost:
-    name: str
-    required_time: float
+from src.lighttest.datacollections import TestTypes, BackendPerformanceStatisticPost, PerformancePost
 
 
 class SumDatabaseTests:
@@ -85,9 +49,9 @@ class ErrorLog:
 
     @staticmethod
     def get_error_numbers_in_dict():
-        error_statistic: dict = {ErrorTypes.FRONTEND.value: len(ErrorLog.frontend_errors),
-                                 ErrorTypes.BACKEND.value: len(ErrorLog.backend_errors),
-                                 ErrorTypes.DATABASE.value: len(ErrorLog.database_errors),
+        error_statistic: dict = {TestTypes.FRONTEND.value: len(ErrorLog.frontend_errors),
+                                 TestTypes.BACKEND.value: len(ErrorLog.backend_errors),
+                                 TestTypes.DATABASE.value: len(ErrorLog.database_errors),
                                  "successful_testcases": ErrorLog.total_testcase_count - ErrorLog.error_count
                                  }
         return error_statistic
@@ -247,13 +211,3 @@ class ErrorLog:
         return inner_method
 
 
-@dataclass(kw_only=True)
-class Error:
-    req_payload: dict
-    req_response: dict
-    statuscode: int
-    performance_in_seconds: float
-    properties: dict
-    id: str
-    error_desc: str
-    request_url: str

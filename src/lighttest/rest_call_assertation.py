@@ -7,13 +7,12 @@ import json
 import requests
 from lighttest import mongo_datas as mdb
 from lighttest import general_calls
-from src.lighttest.error_log import ErrorLog as el
-from src.lighttest.error_log import Error
+from src.lighttest.test_summary import ErrorLog as el
 from lighttest_supplies.general import boolsum, format_rest_uri
 from lighttest_supplies import encoding as en
 from dataclasses import dataclass, KW_ONLY, field
 from enum import Enum, unique
-from src.lighttest.error_log import ResultTypes, TestResult, BackendPerformanceStatisticPost
+from src.lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError
 
 db_e = mdb.testcase_fields
 default_timelimit_in_seconds = 1
@@ -73,9 +72,9 @@ def create_error_record(request_url: str, req_payload: json, req_response: json,
                         properties: json, id: str,
                         error_desc: str = ""):
     """create an error record from the collected datas"""
-    error = Error(req_payload=req_payload, req_response=req_response,
-                  statuscode=statuscode, performance_in_seconds=perf, properties=properties, id=id,
-                  error_desc=error_desc, request_url=format_rest_uri(request_url))
+    error = BackendError(req_payload=req_payload, req_response=req_response,
+                         statuscode=statuscode, performance_in_seconds=perf, properties=properties, id=id,
+                         error_desc=error_desc, request_url=format_rest_uri(request_url))
     el.add_error(error.__dict__)
     el.error_count_inc()
 

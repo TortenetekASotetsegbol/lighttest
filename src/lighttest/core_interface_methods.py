@@ -1,17 +1,11 @@
-import datetime
 from dataclasses import dataclass
-from dataclasses import KW_ONLY
 from enum import Enum, unique
-from os import makedirs
 
 from lighttest.error_log import ErrorLog
 from lighttest_supplies import date_methods
 from lighttest_supplies.timers import Utimer
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, \
-    ElementClickInterceptedException
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -19,11 +13,10 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support import color
 from selenium.common import exceptions
-from inspect import signature
-from lighttest_supplies.general import create_logging_structure, create_logging_directory, create_directory
-from pathlib import Path
+from lighttest_supplies.general import create_logging_structure, create_logging_directory
+
+from src.lighttest.datacollections import CaseStep
 
 
 def collect_data(mimic_type: str):
@@ -96,23 +89,6 @@ class InnerStatics(Enum):
     PARAM: str = "__param__"
     FIND_LABEL_BY_PARAM: str = "//*[text()='__param__']"
     IN_PARENT_FIND_LABEL_BY_PARAM: str = ".//*[text()='__param__']"
-
-
-@dataclass(kw_only=True)
-class CaseStep:
-    """
-    contains every necessary information about the case's step.
-    """
-    xpath: str
-    webelement_name: str
-    fatal_bug: bool
-    step_positivity: str
-    step_description: str
-    step_failed: bool
-    step_type: str
-    step_error: str
-
-    data: str = ""
 
 
 @dataclass(kw_only=True)
