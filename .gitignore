@@ -1,0 +1,8 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+*/*.idea/vcs.xml
+*.idea*
+/dist/*
+/src/lighttest/__pycache__/*
+/tests/*

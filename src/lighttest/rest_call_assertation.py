@@ -7,13 +7,13 @@ import json
 import requests
 from lighttest import mongo_datas as mdb
 from lighttest import general_calls
-from src.lighttest.test_summary import ErrorLog as el
-import src.lighttest.test_summary as ts
+from lighttest.test_summary import ErrorLog as el
+import lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
 from lighttest_supplies import encoding as en
 from dataclasses import dataclass, KW_ONLY, field
 from enum import Enum, unique
-from src.lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
+from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes
 
 db_e = mdb.testcase_fields

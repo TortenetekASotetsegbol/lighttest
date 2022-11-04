@@ -15,10 +15,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common import exceptions
 from lighttest_supplies.general import create_logging_structure, create_logging_directory
-import src.lighttest.test_summary as ts
-from src.lighttest.datacollections import TestTypes, ResultTypes
+import lighttest.test_summary as ts
+from lighttest.datacollections import TestTypes, ResultTypes
 
-from src.lighttest.datacollections import CaseStep
+from lighttest.datacollections import CaseStep
 
 
 def collect_data(mimic_type: str):

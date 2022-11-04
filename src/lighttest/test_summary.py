@@ -12,22 +12,22 @@ from lighttest_supplies import timers, date_methods
 from lighttest_supplies.general import create_logging_directory, create_logging_structure
 from lighttest_supplies.date_methods import get_current_time
 
-import src.lighttest.test_summary
-from src.lighttest.charts import generate_figure_from_array, generate_pie_chart_from_simple_dict, \
-    generate_bar_chart_from_simple_dict, DataFrame, generate_bar_chart_from_dataframe
-from src.lighttest.charts import Orientation
+import lighttest.test_summary
+from lighttest.charts import generate_figure_from_array, generate_pie_chart_from_simple_dict, \
+    generate_bar_chart_from_simple_dict, DataFrame, generate_bar_chart_from_dataframe, pd
+from lighttest.charts import Orientation
 from pathlib import Path
-from src.lighttest.datacollections import UniversalPerformancePost
+from lighttest.datacollections import UniversalPerformancePost
 
-from src.lighttest.datacollections import TestTypes, BackendPerformanceStatisticPost, PerformancePost, ResultTypes
+from lighttest.datacollections import TestTypes, BackendPerformanceStatisticPost, PerformancePost, ResultTypes
 
 
 def get_statistic(test_type: str, *result_types: str) -> DataFrame:
     statistics: DataFrame = get_statistics()
-    query_result: DataFrame = []
+    query_result: DataFrame = DataFrame()
     for result_type in result_types:
-        query_result.append(statistics.query(
-            f'test_type == "{test_type}" and (result == "{result_type}")'))
+        query: str = f'(test_type == "{test_type}") and (result == "{result_type}")'
+        query_result = pd.concat([query_result, statistics.query(query)], ignore_index=True)
     return query_result
 
 
@@ -45,7 +45,7 @@ class SumDatabaseTests:
 
 def new_testresult(name: str, result: str, test_type: str, required_time: float):
     result = UniversalPerformancePost(name=name, result=result, test_type=test_type, required_time=required_time)
-    src.lighttest.test_summary.ErrorLog.result_summary.append(result)
+    ErrorLog.result_summary.append(result)
 
 
 def get_statistics() -> DataFrame:
@@ -53,7 +53,7 @@ def get_statistics() -> DataFrame:
 
 
 def get_global_stats() -> DataFrame:
-    statistics = get_statistic()
+    statistics = get_statistics()
     global_stats: DataFrame = statistics[["test_type", "result"]].groupby(["test_type", "result"], as_index=False).agg(
         sum=("result", "count"))
 
@@ -73,7 +73,7 @@ class ErrorLog:
 
     @staticmethod
     def get_error_numbers_in_dict():
-        statistics: DataFrame = ErrorLog.get_statistics()
+        statistics: DataFrame = get_statistics()
 
         error_statistic: dict = {
             TestTypes.FRONTEND.value: len(get_statistic(TestTypes.FRONTEND.value, ResultTypes.FAILED.value,
@@ -102,7 +102,6 @@ class ErrorLog:
         """
 
         ErrorLog.frontend_errors.append(error)
-
 
     @staticmethod
     def __create_dictionary_log_post() -> dict:
@@ -215,12 +214,12 @@ class ErrorLog:
                 if show_chart_summary or save_charts:
                     fig_directory: Path = create_logging_structure(ErrorLog.charts_directory)
                     create_logging_directory(ErrorLog.charts_directory)
-
+                    response_stats: DataFrame = get_statistic(TestTypes.BACKEND.value, ResultTypes.SLOW.value,
+                                                              ResultTypes.SUCCESSFUL.value)
                     generate_bar_chart_from_dataframe(
-                        data=get_statistic(TestTypes.BACKEND.value, ResultTypes.SLOW.value,
-                                           ResultTypes.SUCCESSFUL.value), key_collumn="name",
+                        data=response_stats, key_collumn="name",
                         value_collumn="required_time", title="response time/endpoint",
-                        orientation=Orientation.HORIZONTAL.value, show_fig=show_chart_summary,
+                        show_fig=show_chart_summary,
                         save_fig=save_charts,
                         fig_directory=fig_directory / f'{get_current_time()}.svg')
                     generate_pie_chart_from_simple_dict(
@@ -238,14 +237,14 @@ class ErrorLog:
                     generate_figure_from_array(title="FULL-TEST SUMMARY",
                                                data=get_global_stats(),
                                                show_fig=show_chart_summary, x_axis_column="sum", x_label="quantity",
-                                               y_axis_column="test_type", grouping_column="result",
+                                               y_axis_column="test_type", y_label="types", grouping_column="result",
                                                save_fig=save_charts,
                                                fig_directory=fig_directory / f'{get_current_time()}.svg')
                     generate_bar_chart_from_dataframe(
-                        data=get_statistic(TestTypes.DATABASE.value, ResultTypes.FAILED.vaule,
+                        data=get_statistic(TestTypes.DATABASE.value, ResultTypes.FAILED.value,
                                            ResultTypes.SUCCESSFUL.value, ResultTypes.SLOW.value), key_collumn="name",
                         value_collumn="required_time", title="QUERY TIMES",
-                        orientation=Orientation.HORIZONTAL.value, show_fig=show_chart_summary,
+                        show_fig=show_chart_summary,
                         save_fig=save_charts,
                         fig_directory=fig_directory / f'{get_current_time()}.svg')
 

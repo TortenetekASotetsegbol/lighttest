@@ -65,7 +65,6 @@ class Calls:
 
     @collect_call_request_data
     def post_call(self, uri_path: str, payload: dict, param: str = ""):
-        cd.base_url = "https://testnautopsy.nauticom.hu/rest/"
         self.response = requests.post(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
     @collect_call_request_data
@@ -78,7 +77,6 @@ class Calls:
 
 
 async def post_req_task(uri_path, request: json, session):
-    cd.base_url = "https://testnautopsy.nauticom.hu/rest/"
     async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
         return await collect_async_data(resp=resp, request=request)
 

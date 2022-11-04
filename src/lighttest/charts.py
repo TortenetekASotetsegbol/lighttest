@@ -20,11 +20,28 @@ class Palette(Enum):
     PASTEL = "pastel"
 
 
+class Localisations(Enum):
+    LOWER_LEFT = "lower left"
+    LOWER_RIGHT = "lower right"
+    UPPER_RIGHT = "upper right"
+    UPPER_LEFT = "upper left"
+    RIGHT = "right"
+    CENTER = "center"
+    CENTER_LEFT = "center left"
+    CENTER_RIGHT = "center right"
+    LOWER_CENTER = "lower center"
+    UPPER_CENTER = "upper center"
+
+
 def plot_config(generate_plot):
     @wraps(generate_plot)
     def plot(save_fig: bool = False, show_fig: bool = False, fig_directory: str = "", *args, **kwargs):
-        if type(kwargs["data"]) == dict and (len(kwargs["data"]) == 0 or sum(kwargs["data"].values()) == 0):
-            return
+        if type(kwargs["data"]) == dict:
+            if (len(kwargs["data"]) == 0 or sum(kwargs["data"].values()) == 0):
+                return
+        if type(kwargs["data"]) == DataFrame:
+            if len(kwargs["data"]) == 0:
+                return
 
         plt.title(kwargs["title"])
         plt.rc('legend', fontsize=20)
@@ -41,23 +58,25 @@ def plot_config(generate_plot):
             plt.show()
 
         plt.clf()
+        plt.close()
 
     return plot
 
 
 def generate_figure_from_array(data: DataFrame, x_axis_column: str, y_axis_column: str, y_label: str, x_label: str,
                                title: str,
-                               size_height: float = 10, size_width: float = 10,
+                               size_height: float = 10, size_width: float = 15,
                                orientation: str = Orientation.HORIZONTAL.value,
                                grouping_column: str = None, palette=Palette.PASTEL.value, save_fig: bool = False,
                                show_fig: bool = False, fig_directory: Path = "") -> None:
     if len(data) == 0:
         return
     chart = sns.catplot(data=data, kind="bar", palette=palette, hue=grouping_column, x=x_axis_column, y=y_axis_column,
-                        orient=orientation)
+                        orient=orientation, legend_out=False, legend=Localisations.UPPER_RIGHT.value)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
+    plt.margins(y=0.25, x=0.25)
     chart.fig.set_figheight(size_height)
     chart.fig.set_figwidth(size_width)
     plt.tight_layout()

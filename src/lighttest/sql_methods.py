@@ -6,10 +6,10 @@ from lighttest_supplies.general_datas import TestType as tt
 from lighttest_supplies.timers import Utimer
 from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
-from src.lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
+from lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
 import inspect
 
-from src.lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes
+from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes
 
 
 # decorator
