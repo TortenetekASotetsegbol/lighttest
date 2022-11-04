@@ -8,11 +8,13 @@ import requests
 from lighttest import mongo_datas as mdb
 from lighttest import general_calls
 from src.lighttest.test_summary import ErrorLog as el
+import src.lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
 from lighttest_supplies import encoding as en
 from dataclasses import dataclass, KW_ONLY, field
 from enum import Enum, unique
-from src.lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError
+from src.lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
+    TestTypes
 
 db_e = mdb.testcase_fields
 default_timelimit_in_seconds = 1
@@ -50,7 +52,6 @@ def assertion(resp: general_calls.Calls, id: str, accepted_status_code: int = 20
                    properties=properties, timelimit_in_seconds=timelimit_in_seconds)
 
     request = resp.request
-    el.total_case_count_inc()
     result = is_succesful(ass)
     successful = result.fast and result.successful and boolsum(extra_asserts)
 
@@ -62,9 +63,8 @@ def assertion(resp: general_calls.Calls, id: str, accepted_status_code: int = 20
             el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
-    create_call_result_post(result=result_evaluation(result), request_url=format_rest_uri(resp.url),
-                            response_time=resp.response_time)
-
+    ts.new_testresult(result=result_evaluation(result), name=format_rest_uri(resp.url),
+                      required_time=resp.response_time, test_type=TestTypes.BACKEND.value)
     return successful
 
 
@@ -76,22 +76,6 @@ def create_error_record(request_url: str, req_payload: json, req_response: json,
                          statuscode=statuscode, performance_in_seconds=perf, properties=properties, id=id,
                          error_desc=error_desc, request_url=format_rest_uri(request_url))
     el.add_error(error.__dict__)
-    el.error_count_inc()
-
-
-def create_call_result_post(result: str, request_url: str, response_time: float):
-    if response_time == 0:
-        return
-
-    error_post = BackendPerformanceStatisticPost(result=result, request_url=format_rest_uri(request_url),
-                                                 response_time=response_time)
-    el.backend_performance_datas.append(error_post)
-
-
-def add_new_performance_post(name: str, response_time: float):
-    error_post = BackendPerformanceStatisticPost(result=ResultTypes.UNRECOGNISABLE.value, request_url=name,
-                                                 response_time=response_time)
-    el.backend_performance_datas.append(error_post)
 
 
 def result_evaluation(result: TestResult):

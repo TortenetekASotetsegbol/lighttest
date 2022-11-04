@@ -15,6 +15,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common import exceptions
 from lighttest_supplies.general import create_logging_structure, create_logging_directory
+import src.lighttest.test_summary as ts
+from src.lighttest.datacollections import TestTypes, ResultTypes
 
 from src.lighttest.datacollections import CaseStep
 
@@ -139,8 +141,6 @@ class MiUsIn:
         self.combobox_parent_finding_method_by_xpath: [str] = []
         self.local_field_xpath: str = None
 
-        ErrorLog.total_case_count_inc()
-
         if fullsize_windows:
             MiUsIn.driver.maximize_window()
 
@@ -154,10 +154,8 @@ class MiUsIn:
         """
         if self.error_in_case:
             ErrorLog.add_frontend_error(self.steps_of_reproduction)
-            self.stack_dict_item(updater={self.case_name: self.error_count}, current_dict=ErrorLog.error_per_frontend_case)
-            ErrorLog.error_count_inc()
 
-            del self
+        del self
 
     def stack_dict_item(self, updater: dict, current_dict: dict):
 
@@ -281,6 +279,11 @@ class MiUsIn:
                 MiUsIn._take_a_screenshot(case_object)
 
                 case_object.error_in_case = True
+                ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.FAILED.value,
+                                  required_time=0, name=case_object.case_name)
+            else:
+                ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.SUCCESSFUL.value,
+                                  required_time=0, name=case_object.case_name)
 
         return asert
 

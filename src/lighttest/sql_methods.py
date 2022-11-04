@@ -6,10 +6,10 @@ from lighttest_supplies.general_datas import TestType as tt
 from lighttest_supplies.timers import Utimer
 from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
-from lighttest.error_log import ErrorLog, SumDatabaseTests, PerformancePost
+from src.lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
 import inspect
 
-from src.lighttest.datacollections import QueryResult, QueryErrorPost
+from src.lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes
 
 
 # decorator
@@ -46,7 +46,6 @@ def assertion(assertion_fun):
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
-        ErrorLog.total_testcase_count += 1
         expected_result: set = set(completed_kwargs["expected_result"])
         perf_l = signature_test.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
@@ -59,11 +58,14 @@ def assertion(assertion_fun):
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
         if found_error:
-            ErrorLog.error_count_inc()
             if not match:
-                SumDatabaseTests.failed_queries += 1
+                new_testresult(name=alias, result=ResultTypes.FAILED.value,
+                               required_time=completed_kwargs["result_informations"].required_time,
+                               test_type=TestTypes.DATABASE.value)
             else:
-                SumDatabaseTests.inefficient_queries += 1
+                new_testresult(name=alias, result=ResultTypes.SLOW.value,
+                               required_time=completed_kwargs["result_informations"].required_time,
+                               test_type=TestTypes.DATABASE.value)
 
             error_post = QueryErrorPost(alias=alias,
                                         required_time=completed_kwargs["result_informations"].required_time,
@@ -74,10 +76,10 @@ def assertion(assertion_fun):
                                         assertion_type=assertion_fun.__name__)
             ErrorLog.database_errors.append(vars(error_post))
         else:
-            SumDatabaseTests.successful_queries += 1
-        performance_post = PerformancePost(name=alias,
-                                           required_time=completed_kwargs["result_informations"].required_time)
-        ErrorLog.query_performance_statistics.append(performance_post)
+            new_testresult(name=alias, result=ResultTypes.SUCCESSFUL.value,
+                           required_time=completed_kwargs["result_informations"].required_time,
+                           test_type=TestTypes.DATABASE.value)
+
         kwargs["result_informations"].result.close()
 
     return assertion_method
@@ -169,7 +171,6 @@ class SqlConnection:
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
     performance_check_result = sql_result.required_time < timelimit_in_seconds
     return performance_check_result
-
 
 # TODO change the ploting. It must contains automatic size-calibration
 # TODO change the datacollecting method by make them universal.
