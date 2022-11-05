@@ -1,7 +1,9 @@
+import inspect
 from dataclasses import dataclass
 from enum import Enum, unique
+from functools import wraps
 
-from lighttest.error_log import ErrorLog
+from lighttest.test_summary import ErrorLog
 from lighttest_supplies import date_methods
 from lighttest_supplies.timers import Utimer
 
@@ -19,71 +21,51 @@ import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes
 
 from lighttest.datacollections import CaseStep
+import inspect
 
 
-def collect_data(mimic_type: str):
-    def mimicing_function(mimic_fun):
+def collect_data(mimic_fun):
+    signature = inspect.signature(obj=mimic_fun).bind_partial()
+    signature.apply_defaults()
 
-        def collecting_data(*args, **kwargs):
+    @wraps(mimic_fun)
+    def collecting_data(*args, **kwargs):
+        completed_kwargs: dict = signature.arguments
+        completed_kwargs.update(kwargs)
 
-            case_object: MiUsIn = args[0]
-            if case_object.casebreak:
-                return None
+        case_object: MiUsIn = args[0]
+        if case_object.casebreak:
+            return None
 
-            if "step_description" not in kwargs.keys():
-                kwargs.update({"step_description": ""})
-            if "step_positivity" not in kwargs.keys():
-                kwargs.update({"step_positivity": Values.POSITIVE.value})
-            if "webelement_name" not in kwargs.keys():
-                kwargs.update({"webelement_name": ""})
-            if "major_bug" not in kwargs.keys():
-                kwargs.update({"major_bug": False})
+        step_failed: bool = False
+        new_error: str = ""
+        try:
+            mimic_fun(*args, **kwargs)
 
-            step_failed: bool = False
-            new_error: str = ""
-            try:
-                mimic_fun(*args, **kwargs)
+        except (exceptions.WebDriverException, ValueError) as error:
+            # case_object.casebreak_alarm(major_bug=kwargs["major_bug"])
+            new_error = error
+            step_failed = True
 
-            except (exceptions.WebDriverException, ValueError) as error:
-                # case_object.casebreak_alarm(major_bug=kwargs["major_bug"])
-                new_error = error
-                # ErrorLog.error_count_inc()
-                step_failed = True
+        if "xpath" not in completed_kwargs.keys():
+            completed_kwargs.update({"xpath": ""})
+        if "data" not in completed_kwargs.keys():
+            completed_kwargs.update({"data": ""})
+        step_datas = CaseStep(step_description=completed_kwargs['step_description'],
+                              step_positivity=completed_kwargs['step_positivity'],
+                              webelement_name=completed_kwargs['webelement_name'], fatal_bug=completed_kwargs['major_bug'],
+                              xpath=completed_kwargs['xpath'], step_failed=step_failed, step_type=mimic_fun.__name__,
+                              data=completed_kwargs['data'], step_error=new_error)
+        return step_datas
 
-            if "xpath" not in kwargs.keys():
-                kwargs.update({"xpath": ""})
-            if "data" not in kwargs.keys():
-                kwargs.update({"data": ""})
-            step_datas = CaseStep(step_description=kwargs['step_description'],
-                                  step_positivity=kwargs['step_positivity'],
-                                  webelement_name=kwargs['webelement_name'], fatal_bug=kwargs['major_bug'],
-                                  xpath=kwargs['xpath'], step_failed=step_failed, step_type=mimic_type,
-                                  data=kwargs['data'], step_error=new_error)
-            return step_datas
+    return collecting_data
 
-        return collecting_data
-
-    return mimicing_function
 
 
 @unique
 class Values(Enum):
     POSITIVE = "positive"
     NEGATIVE = "negative"
-
-    CLICK = "click"
-    DOUBLE_CICK = "double click"
-    PRESS_KEY = "press key"
-    PRESS_ENTER = "press enter"
-    PRESS_TAB = "press tab"
-    PRESS_ESC = "press escape"
-    READ = "read"
-    SEND_KEYS = "send keys"
-    COMBOBOX = "combobox"
-    ACCESSIBILITY = "accessibility"
-    CONDITION_CHECK = "condition check"
-    CHECK_STYLE = "check style"
-    CHECK_TEXT = "check text"
 
 
 @unique
@@ -308,7 +290,7 @@ class MiUsIn:
         MiUsIn.driver.save_screenshot(f"{screenshot_path.absolute()}/{file_name}")
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.CONDITION_CHECK.value)
+    @collect_data
     def expected_condition(self, timeout_in_seconds: float, expected_condition: expected_conditions = None,
                            until_not: bool = False, webelement_is_visible=False, webelement_is_clickable=False,
                            alert: str = None, webelement_name: str = "", major_bug: bool = False,
@@ -355,7 +337,7 @@ class MiUsIn:
             self.casebreak = True
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.CLICK.value)
+    @collect_data
     def click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
               step_positivity: str = Values.POSITIVE.value,
               step_description: str = "", find_by_label: str = None) -> CaseStep | None:
@@ -379,7 +361,7 @@ class MiUsIn:
         clickable_webelement.click()
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.DOUBLE_CICK.value)
+    @collect_data
     def double_click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
                      step_positivity: str = Values.POSITIVE.value,
                      step_description: str = "", find_by_label: str = None) -> CaseStep | None:
@@ -404,7 +386,7 @@ class MiUsIn:
         MiUsIn.action_driver.double_click(on_element=clickable_webelement).perform()
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.SEND_KEYS.value)
+    @collect_data
     def fill_field(self, field_xpath: str, data: str, webelement_name: str = "", major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value,
                    step_description: str = "") -> CaseStep | None:
@@ -425,7 +407,7 @@ class MiUsIn:
         field.send_keys(data)
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.SEND_KEYS.value)
+    @collect_data
     def fill_field_by_param(self, param: str, find_field_xpath: str = None, data="", webelement_name: str = "empty",
                             major_bug: bool = False,
                             step_positivity: str = Values.POSITIVE.value,
@@ -498,7 +480,7 @@ class MiUsIn:
         list_element.click()
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.COMBOBOX.value)
+    @collect_data
     def select_combobox_element_by_param(self, param: str, input_field_xpath: str = None,
                                          dropdown_element_text: str = "",
                                          webelement_name: str = "",
@@ -576,7 +558,7 @@ class MiUsIn:
             MiUsIn.set_bomb_timeout(1)
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.PRESS_KEY.value)
+    @collect_data
     def press_key(self, key_to_press: str, webelement_name: str = "", major_bug: bool = False,
                   step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> CaseStep | None:
         """
@@ -623,7 +605,7 @@ class MiUsIn:
         return atr_value
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.CHECK_STYLE.value)
+    @collect_data
     def match_style(self, xpath: str, attribute: str, expected_value: str, webelement_name: str = "",
                     major_bug: bool = False,
                     step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> object:
@@ -672,7 +654,7 @@ class MiUsIn:
         return True
 
     @__testcase_logging
-    @collect_data(mimic_type=Values.CHECK_TEXT.value)
+    @collect_data
     def match_text(self, expected_value: str, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value, step_description: str = "",
                    by_label: str = None) -> object:
@@ -682,5 +664,4 @@ class MiUsIn:
             raise ValueError
 
 # TODO complite the documentation in sphinx style
-# TODO extend the logging decorator with logging to txt and logging to only the console
-# TODO extend the logging docirator with optional charts of the result_informations
+
