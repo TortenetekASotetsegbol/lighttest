@@ -463,7 +463,7 @@ class MiUsIn:
         xpaths.extend(default_filed_xpaths)
 
     @__testcase_logging
-    @collect_data(Values.COMBOBOX.value)
+    @collect_data
     def select_combobox_element(self, input_field_xpath: str, dropdown_element_text: str = "",
                                 webelement_name: str = "",
                                 major_bug: bool = False,

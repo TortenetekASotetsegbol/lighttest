@@ -188,8 +188,9 @@ class ErrorLog:
 
         """
         frontend_errors: DataFrame = get_statistic(TestTypes.FRONTEND.value, ResultTypes.FAILED.value)
-        frontend_errors[["name", "result"]].groupby("name", as_index=False).agg(errors_count=("result", "count"))
-        return frontend_errors
+        frontend_statistic: DataFrame = frontend_errors[["name", "result"]].groupby("name", as_index=False).agg(
+            errors_count=("result", "count"))
+        return frontend_statistic
 
     @staticmethod
     def create_log(log_to_mongo_db: bool = False, log_to_txt: bool = False, log_to_console: bool = False,
@@ -230,7 +231,7 @@ class ErrorLog:
                         fig_directory=fig_directory / f'{get_current_time()}.svg')
                     generate_bar_chart_from_dataframe(title="FRONTEND ERORRS PER TESTCASE",
                                                       data=ErrorLog.get_errors_per_frontendcases(),
-                                                      show_fig=show_chart_summary, key_column="name",
+                                                      show_fig=show_chart_summary, key_collumn="name",
                                                       value_collumn="errors_count",
                                                       save_fig=save_charts,
                                                       fig_directory=fig_directory / f'{get_current_time()}.svg')
