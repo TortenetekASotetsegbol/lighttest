@@ -52,13 +52,13 @@ def collect_data(mimic_fun):
             completed_kwargs.update({"data": ""})
         step_datas = CaseStep(step_description=completed_kwargs['step_description'],
                               step_positivity=completed_kwargs['step_positivity'],
-                              webelement_name=completed_kwargs['webelement_name'], fatal_bug=completed_kwargs['major_bug'],
+                              webelement_name=completed_kwargs['webelement_name'],
+                              fatal_bug=completed_kwargs['major_bug'],
                               xpath=completed_kwargs['xpath'], step_failed=step_failed, step_type=mimic_fun.__name__,
                               data=completed_kwargs['data'], step_error=new_error)
         return step_datas
 
     return collecting_data
-
 
 
 @unique
@@ -95,6 +95,7 @@ class MiUsIn:
     bomb_timeout: float = 1
     global_combobox_parent_finding_method_by_xpath: [str] = []
     global_field_xpath: [str] = []
+    global_click_xpaths: set[str] = {}
     global_webalert_xpath: str = None
 
     def __init__(self, case_name: str, fullsize_windows=True,
@@ -121,6 +122,7 @@ class MiUsIn:
         self.screenshots_container_directory: str = screenshots_container_directory
         self.combobox_parent_finding_method_by_xpath: [str] = []
         self.local_field_xpath: str = None
+        self.local_click_xpaths: set[str] = {}
 
         if fullsize_windows:
             MiUsIn.driver.maximize_window()
@@ -188,6 +190,43 @@ class MiUsIn:
 
         """
         self.local_field_xpath = xpaths
+
+    @staticmethod
+    def set_global_click_xpaths(*xpaths: str):
+        """
+        placeholder
+
+        Arguments:
+            *xpaths: the value of this param determinate
+                    how to find clickable webelements in global.
+
+        Format:
+            the paramter in the xpath need to be the following: __param__
+
+        Example:
+            set_case_field_xpath("//*[text()='__param__']/parent::*/descendant::fa-icon",
+            "//*[text()='__param__']/parent::*/descendant::button")
+
+        """
+        MiUsIn.global_click_xpaths = set(xpaths)
+
+    def set_case_click_xpaths(self, *xpaths: str):
+        """
+        placeholder
+
+        Arguments:
+            *xpaths: the value of this param determinate
+                    how to find clickable webelements in the level of testcase.
+
+        Format:
+            the paramter in the xpath need to be the following: __param__
+
+        Example:
+            set_case_field_xpath("//*[text()='__param__']/parent::*/descendant::fa-icon",
+            "//*[text()='__param__']/parent::*/descendant::button")
+
+        """
+        self.local_click_xpaths = set(xpaths)
 
     @staticmethod
     def set_global_combobox_parent_finding_method_by_xpath(*xpaths: str):
@@ -361,6 +400,34 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
+    def click_by_param(self, param: str, parametric_xpath: str = None, webelement_name: str = "",
+                       major_bug: bool = False,
+                       step_positivity: str = Values.POSITIVE.value,
+                       step_description: str = "") -> CaseStep | None:
+        """
+        Mimic a mouse click event as a case-step.
+
+        Arguments:
+            xpath: a clickable webelement's field_xpath
+            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
+            minor_bug: if it true and the case-step failed, the testcase will be continued.
+                If false and the case-step failed, the testcase following steps will be skipped.
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+            step_description: optional. You can write a description, what about this step.
+
+        examples:
+
+        """
+        created_click_xpath: str = self.__create_click_xpath(param)
+        if parametric_xpath is not None:
+            created_click_xpath = parametric_xpath.replace(InnerStatics.PARAM.value, param)
+        elif created_click_xpath == "" and parametric_xpath is None:
+            raise TypeError("None value in argument: 'parametric_xpath'")
+        clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=created_click_xpath)
+        clickable_webelement.click()
+
+    @__testcase_logging
+    @collect_data
     def double_click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
                      step_positivity: str = Values.POSITIVE.value,
                      step_description: str = "", find_by_label: str = None) -> CaseStep | None:
@@ -445,6 +512,22 @@ class MiUsIn:
             field_xpaths = [field_findig_method.replace(InnerStatics.PARAM.value, param) for field_findig_method in
                             MiUsIn.global_field_xpath]
             return "|".join(field_xpaths)
+        else:
+            return ""
+
+    def __create_click_xpath(self, param: str):
+        if len(self.local_click_xpaths) != 0:
+            field_xpaths: set[str] = set(
+                parametric_xpath.replace(InnerStatics.PARAM.value, param) for parametric_xpath in
+                self.local_click_xpaths)
+            return "|".join(field_xpaths)
+
+        elif len(MiUsIn.global_click_xpaths) != 0:
+            field_xpaths: set[str] = set(
+                parametric_xpath.replace(InnerStatics.PARAM.value, param) for parametric_xpath in
+                MiUsIn.global_click_xpaths)
+            return "|".join(field_xpaths)
+
         else:
             return ""
 
@@ -665,4 +748,3 @@ class MiUsIn:
             raise ValueError
 
 # TODO complite the documentation in sphinx style
-
