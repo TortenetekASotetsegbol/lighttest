@@ -1,12 +1,12 @@
 import dataclasses
 
-from lighttest.core_interface_methods import Values, CaseStep, MiUsIn
+from lighttest.interface_methods import Values, CaseStep, MiUsIn
 from lighttest_supplies import date_methods
 from os import makedirs
 import datetime
 from selenium.common.exceptions import WebDriverException
-from lighttest.error_log import ErrorLog
-from lighttest.core_interface_methods import CaseStep
+from lighttest.test_summary import ErrorLog
+from lighttest.interface_methods import CaseStep
 from dataclasses import KW_ONLY
 
 

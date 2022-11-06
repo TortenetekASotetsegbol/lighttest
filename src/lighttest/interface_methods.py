@@ -21,7 +21,6 @@ import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes
 
 from lighttest.datacollections import CaseStep
-import inspect
 
 
 def collect_data(mimic_fun):
@@ -403,6 +402,7 @@ class MiUsIn:
             data: the string you want to put into the specified field.
         """
         field = MiUsIn.driver.find_element(by=By.XPATH, value=field_xpath)
+        field.click()
         field.clear()
         field.send_keys(data)
 
@@ -430,6 +430,7 @@ class MiUsIn:
         elif created_field_xpath == "" and find_field_xpath is None:
             raise TypeError("None value in field: 'field_xpath'")
         field = MiUsIn.driver.find_element(by=By.XPATH, value=created_field_xpath)
+        field.click()
         field.clear()
         field.send_keys(data)
         xpath = created_field_xpath
