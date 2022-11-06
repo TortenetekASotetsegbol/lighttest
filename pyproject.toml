@@ -1,17 +1,17 @@
 [build-system]
-requires = ["setuptools>=61.0", "humps", "pymongo", "sqlalchemy","aiohttp","asyncio", "selenium", "webdriver_manager", "numpy", "pandas", "seaborn", "matplotlib"]
+requires = ["setuptools>=61.0", "humps", "pymongo", "sqlalchemy", "asyncio", "selenium", "webdriver_manager", "numpy", "pandas", "seaborn", "matplotlib"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lighttest"
-version = "0.5.12"
+version = "0.5.13"
 authors = [
   { name= "David Toth", email= "tothlldavid@gmail.com" },
 ]
 description = "tools for testing"
 readme = "README.md"
 license = { file="LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
