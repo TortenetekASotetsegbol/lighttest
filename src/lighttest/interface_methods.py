@@ -19,8 +19,10 @@ from selenium.common import exceptions
 from lighttest_supplies.general import create_logging_structure, create_logging_directory
 import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes
-
+from faker import Faker
 from lighttest.datacollections import CaseStep
+
+fake = Faker()
 
 
 def collect_data(mimic_fun):
@@ -29,7 +31,7 @@ def collect_data(mimic_fun):
 
     @wraps(mimic_fun)
     def collecting_data(*args, **kwargs):
-        completed_kwargs: dict = signature.arguments
+        completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
 
         case_object: MiUsIn = args[0]
@@ -42,7 +44,6 @@ def collect_data(mimic_fun):
             mimic_fun(*args, **kwargs)
 
         except (exceptions.WebDriverException, ValueError) as error:
-            # case_object.casebreak_alarm(major_bug=kwargs["major_bug"])
             new_error = error
             step_failed = True
 
@@ -305,6 +306,7 @@ class MiUsIn:
                 ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.SUCCESSFUL.value,
                                   required_time=0, name=case_object.case_name)
 
+            return step_datas
         return asert
 
     @staticmethod
@@ -500,7 +502,13 @@ class MiUsIn:
         field.click()
         field.clear()
         field.send_keys(data)
-        xpath = created_field_xpath
+
+
+
+    def fill_form(self, **kwargs):
+        for key, value in kwargs.items():
+            self.fill_field_by_param(param=str(key).replace("_", " "), data=value)
+        return kwargs
 
     def __create_field_xpath(self, param: str):
         if self.local_field_xpath is not None:
