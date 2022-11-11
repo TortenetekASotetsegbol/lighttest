@@ -22,6 +22,7 @@ default_timelimit_in_seconds = 1
 
 @dataclass(kw_only=True)
 class RestTest:
+    extra_asserts_accepted: bool
     resp: general_calls.Calls
     id: str = ""
     accepted_status_code: int = 200
@@ -49,7 +50,8 @@ def assertion(resp: general_calls.Calls, id: str, accepted_status_code: int = 20
     Return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
     """
     ass = RestTest(resp=resp, id=id, accepted_status_code=accepted_status_code, error_desc=error_desc,
-                   properties=properties, timelimit_in_seconds=timelimit_in_seconds)
+                   properties=properties, timelimit_in_seconds=timelimit_in_seconds,
+                   extra_asserts_accepted=boolsum(extra_asserts))
 
     request = resp.request
     result = is_succesful(ass)
@@ -84,17 +86,21 @@ def result_evaluation(result: TestResult):
             return ResultTypes.SUCCESSFUL.value
         case (True, False):
             return ResultTypes.SLOW.value
-        case [(False, True), (False, False)]:
+        case (False, True):
+            return ResultTypes.FAILED.value
+        case (False, False):
             return ResultTypes.FAILED.value
 
 
 def is_succesful(test_object: RestTest):
     positivity = test_object.properties[db_e.POZITIVITAS.value]
     good_perf = test_object.resp.response_time < test_object.timelimit_in_seconds
+    extra_asserts_was_successful = test_object.extra_asserts_accepted
     positive = positivity == db_e.POSITIVITY_POSITIVE.value
     negative = positivity == db_e.POSITIVITY_NEGATIVE.value
     status_code_accepted = test_object.resp.status_code == test_object.accepted_status_code
-    is_successful = (positive and status_code_accepted) or (negative and not status_code_accepted)
+    is_successful = ((positive and status_code_accepted) or (
+            negative and not status_code_accepted)) and extra_asserts_was_successful
     result = TestResult(fast=good_perf, successful=is_successful)
 
     return result
