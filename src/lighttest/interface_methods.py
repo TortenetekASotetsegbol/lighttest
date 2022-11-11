@@ -72,7 +72,7 @@ class Values(Enum):
 class InnerStatics(Enum):
     PARAM: str = "__param__"
     FIND_LABEL_BY_PARAM: str = "//*[text()='__param__']"
-    IN_PARENT_FIND_LABEL_BY_PARAM: str = ".//*[text()='__param__']"
+    IN_PARENT_FIND_LABEL_BY_PARAM: str = ".//*[contains(text(), '__param__')]"
 
 
 @dataclass(kw_only=True)

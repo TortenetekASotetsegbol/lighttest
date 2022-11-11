@@ -149,14 +149,14 @@ class ErrorLog:
             create.write(f"\n-------------------------------------")
             for error in ErrorLog.frontend_errors:
                 create.write(f"\n********************")
-                create.write(f"\n\n{json.dumps(error, indent=4, default=str)}")
+                create.write(f"\n\n{json.dumps(error, indent=4, default=str, ensure_ascii=False)}")
                 create.write(f"\n********************")
             create.write(f"\n")
             create.write(f"\nDATABASE_ERRORS")
             create.write(f"\n-------------------------------------")
             for error in ErrorLog.database_errors:
                 create.write(f"\n********************")
-                create.write(f"\n\n{json.dumps(error, indent=4, default=str)}")
+                create.write(f"\n\n{json.dumps(error, indent=4, default=str, ensure_ascii=False)}")
                 create.write(f"\n********************")
 
     @staticmethod
