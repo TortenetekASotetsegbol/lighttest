@@ -86,9 +86,7 @@ def result_evaluation(result: TestResult):
             return ResultTypes.SUCCESSFUL.value
         case (True, False):
             return ResultTypes.SLOW.value
-        case (False, True):
-            return ResultTypes.FAILED.value
-        case (False, False):
+        case (False, True) | (False, False):
             return ResultTypes.FAILED.value
 
 
