@@ -47,15 +47,23 @@ def collect_data(mimic_fun):
             new_error = error
             step_failed = True
 
-        if "xpath" not in completed_kwargs.keys():
-            completed_kwargs.update({"xpath": ""})
         if "data" not in completed_kwargs.keys():
             completed_kwargs.update({"data": ""})
+
+        if "xpath" not in completed_kwargs.keys() or completed_kwargs["xpath"] is None:
+            if "param" in completed_kwargs.keys():
+                completed_kwargs.update({"xpath": completed_kwargs["param"]})
+            elif "find_by_label" in completed_kwargs.keys():
+                completed_kwargs.update({"xpath": completed_kwargs["find_by_label"]})
+            else:
+                completed_kwargs.update({"xpath": ""})
+
         step_datas = CaseStep(step_description=completed_kwargs['step_description'],
                               step_positivity=completed_kwargs['step_positivity'],
                               webelement_name=completed_kwargs['webelement_name'],
                               fatal_bug=completed_kwargs['major_bug'],
-                              xpath=completed_kwargs['xpath'], step_failed=step_failed, step_type=mimic_fun.__name__,
+                              webelement_identifier=completed_kwargs['xpath'], step_failed=step_failed,
+                              step_type=mimic_fun.__name__,
                               data=completed_kwargs['data'], step_error=new_error)
         return step_datas
 
@@ -307,6 +315,7 @@ class MiUsIn:
                                   required_time=0, name=case_object.case_name)
 
             return step_datas
+
         return asert
 
     @staticmethod
@@ -380,7 +389,7 @@ class MiUsIn:
     @collect_data
     def click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
               step_positivity: str = Values.POSITIVE.value,
-              step_description: str = "", find_by_label: str = None) -> CaseStep | None:
+              step_description: str = "", find_by_label: str = None, contains: bool = True) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
@@ -395,8 +404,11 @@ class MiUsIn:
         examples:
 
         """
-        if find_by_label is not None:
-            xpath = f"//*[text()='{find_by_label}']"
+        match (find_by_label, contains):
+            case (True, False):
+                xpath = f"//*[text()='{find_by_label}']"
+            case (True, True):
+                xpath = f"//*[contains=(text(),'{find_by_label}')]"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         clickable_webelement.click()
 
@@ -503,8 +515,6 @@ class MiUsIn:
         field.clear()
         field.send_keys(data)
 
-
-
     def fill_form(self, **kwargs):
         for key, value in kwargs.items():
             self.fill_field_by_param(param=str(key).replace("_", " "), data=value)
@@ -556,31 +566,31 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def select_combobox_element(self, input_field_xpath: str, dropdown_element_text: str = "",
+    def select_combobox_element(self, input_field_xpath: str, data: str = "",
                                 webelement_name: str = "",
                                 major_bug: bool = False,
                                 step_positivity: str = Values.POSITIVE.value,
                                 step_description: str = "") -> CaseStep | None:
 
-        self.fill_field(field_xpath=input_field_xpath, data=dropdown_element_text,
+        self.fill_field(field_xpath=input_field_xpath, data=data,
                         webelement_name=webelement_name,
                         major_bug=major_bug,
                         step_positivity=step_positivity,
                         step_description=step_description)
 
-        list_element = self.__find_combobox_list_element(input_field_xpath, dropdown_element_text)
+        list_element = self.__find_combobox_list_element(input_field_xpath, data)
         list_element.click()
 
     @__testcase_logging
     @collect_data
     def select_combobox_element_by_param(self, param: str, input_field_xpath: str = None,
-                                         dropdown_element_text: str = "",
+                                         data: str = "",
                                          webelement_name: str = "",
                                          major_bug: bool = False,
                                          step_positivity: str = Values.POSITIVE.value,
                                          step_description: str = "") -> CaseStep | None:
 
-        self.fill_field_by_param(find_field_xpath=input_field_xpath, data=dropdown_element_text,
+        self.fill_field_by_param(find_field_xpath=input_field_xpath, data=data,
                                  webelement_name=webelement_name,
                                  major_bug=major_bug,
                                  step_positivity=step_positivity,
@@ -589,7 +599,7 @@ class MiUsIn:
         if input_field_xpath is None:
             input_field_xpath = self.__create_field_xpath(param)
 
-        list_element = self.__find_combobox_list_element(input_field_xpath, dropdown_element_text)
+        list_element = self.__find_combobox_list_element(input_field_xpath, data)
         list_element.click()
 
     def __find_combobox_list_element(self, input_field_xpath: str, dropdown_element_text: str):
@@ -756,3 +766,4 @@ class MiUsIn:
             raise ValueError
 
 # TODO complite the documentation in sphinx style
+# TODO replace the variety of similar argument-names to universal: data, xpath, identifier

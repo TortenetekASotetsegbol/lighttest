@@ -12,7 +12,7 @@ from time import perf_counter
 from lighttest_supplies.encoding import binary_json_to_json
 from dataclasses import dataclass
 import json
-#import aiohttp
+import aiohttp
 
 # decorator
 from src.lighttest.datacollections import BackendResultDatas
@@ -38,18 +38,18 @@ def collect_call_request_data(request_function):
     return rest_api_call
 
 
-# async def collect_async_data(resp: object, request: dict):
-#     result: BackendResultDatas = copy.deepcopy(BackendResultDatas())
-#     result.headers = resp.headers
-#     result.status_code = resp.status
-#     result.request = request
-#     result.url = str(resp.url)
-#     try:
-#         result.response_json = await resp.json()
-#     except aiohttp.client_exceptions.ContentTypeError:
-#         result.response_json = {}
-#     result.response_time = 0
-#     return result
+async def collect_async_data(resp: object, request: dict):
+    result: BackendResultDatas = copy.deepcopy(BackendResultDatas())
+    result.headers = resp.headers
+    result.status_code = resp.status
+    result.request = request
+    result.url = str(resp.url)
+    try:
+        result.response_json = await resp.json()
+    except aiohttp.client_exceptions.ContentTypeError:
+        result.response_json = {}
+    result.response_time = 0
+    return result
 
 
 class Calls:
@@ -76,19 +76,19 @@ class Calls:
         self.response = requests.put(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
 
-# async def post_req_task(uri_path, request: json, session):
-#     async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
-#         return await collect_async_data(resp=resp, request=request)
-#
-#
-# async def get_req_task(uri_path, session, request: json, param=""):
-#     async with session.get(url=f'{cd.base_url}{uri_path}{param}') as resp:
-#         return await collect_async_data(resp=resp, request=request)
-#
-#
-# async def put_req_task(uri_path, request: json, session):
-#     async with session.put(url=cd.base_url + uri_path, json=request) as resp:
-#         return await collect_async_data(resp=resp, request=request)
+async def post_req_task(uri_path, request: json, session):
+    async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
+        return await collect_async_data(resp=resp, request=request)
+
+
+async def get_req_task(uri_path, session, request: json, param=""):
+    async with session.get(url=f'{cd.base_url}{uri_path}{param}') as resp:
+        return await collect_async_data(resp=resp, request=request)
+
+
+async def put_req_task(uri_path, request: json, session):
+    async with session.put(url=cd.base_url + uri_path, json=request) as resp:
+        return await collect_async_data(resp=resp, request=request)
 
 
 # decorator

@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lighttest"
-version = "0.5.31"
+version = "0.5.34"
 authors = [
   { name= "David Toth", email= "tothlldavid@gmail.com" },
 ]
 description = "tools for testing"
 readme = "README.md"
 license = { file="LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: lighttest
-Version: 0.5.31
+Version: 0.5.32
 Summary: tools for testing
 Author-email: David Toth <tothlldavid@gmail.com>
 Project-URL: Homepage, https://github.com/pypa/sampleproject
@@ -8,7 +8,7 @@ Project-URL: Bug Tracker, https://github.com/pypa/sampleproject/issues
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.11
+Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
