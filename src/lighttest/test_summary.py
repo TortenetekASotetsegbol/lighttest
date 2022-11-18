@@ -222,7 +222,8 @@ class ErrorLog:
                         value_collumn="required_time", title="response time/endpoint",
                         show_fig=show_chart_summary,
                         save_fig=save_charts,
-                        fig_directory=fig_directory / f'{get_current_time()}.svg')
+                        fig_directory=fig_directory / f'{get_current_time()}.svg', x_label="timecost(sec)",
+                        y_label="endpoint")
                     generate_pie_chart_from_simple_dict(
                         title="ERRORS/SUCCESSFUL TESTCASE RATIO",
                         data=ErrorLog.get_error_numbers_in_dict(),
@@ -234,7 +235,8 @@ class ErrorLog:
                                                       show_fig=show_chart_summary, key_collumn="name",
                                                       value_collumn="errors_count",
                                                       save_fig=save_charts,
-                                                      fig_directory=fig_directory / f'{get_current_time()}.svg')
+                                                      fig_directory=fig_directory / f'{get_current_time()}.svg',
+                                                      y_label="testcase", x_label="error count")
                     generate_figure_from_array(title="FULL-TEST SUMMARY",
                                                data=get_global_stats(),
                                                show_fig=show_chart_summary, x_axis_column="sum", x_label="quantity",
@@ -247,7 +249,8 @@ class ErrorLog:
                         value_collumn="required_time", title="QUERY TIMES",
                         show_fig=show_chart_summary,
                         save_fig=save_charts,
-                        fig_directory=fig_directory / f'{get_current_time()}.svg')
+                        fig_directory=fig_directory / f'{get_current_time()}.svg', x_label="required time",
+                        y_label="query's name")
 
             return run_testcases
 
