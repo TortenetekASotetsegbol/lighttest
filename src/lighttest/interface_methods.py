@@ -102,8 +102,8 @@ class MiUsIn:
     driver: webdriver.Chrome = None
     action_driver: ActionChains = None
     bomb_timeout: float = 1
-    global_combobox_parent_finding_method_by_xpath: [str] = []
-    global_field_xpath: [str] = []
+    global_combobox_parent_finding_method_by_xpaths: set[str] = {}
+    global_field_xpaths: set[str] = {}
     global_click_xpaths: set[str] = {}
     global_webalert_xpath: str = None
 
@@ -129,8 +129,8 @@ class MiUsIn:
         self.error_in_case = False
         self.error_count: int = 0
         self.screenshots_container_directory: str = screenshots_container_directory
-        self.combobox_parent_finding_method_by_xpath: [str] = []
-        self.local_field_xpath: str = None
+        self.combobox_parent_finding_method_by_xpaths: set[str] = {}
+        self.local_field_xpaths: set[str] = {}
         self.local_click_xpaths: set[str] = {}
 
         if fullsize_windows:
@@ -161,7 +161,7 @@ class MiUsIn:
         @param: global_combobox_parent_finding_method_by_xpath the value of this param determinate
                 how to find combobox parent webelement
         """
-        self.combobox_parent_finding_method_by_xpath: [str] = xpaths
+        self.combobox_parent_finding_method_by_xpaths = set(xpaths)
 
     @staticmethod
     def set_global_field_xpath(*xpaths: str):
@@ -180,7 +180,7 @@ class MiUsIn:
             "//*[text()='__param__']/parent::*/descendant::textarea")
 
         """
-        MiUsIn.global_field_xpath = xpaths
+        MiUsIn.global_field_xpaths = set(xpaths)
 
     def set_case_field_xpath(self, *xpaths: str):
         """
@@ -198,7 +198,7 @@ class MiUsIn:
             "//*[text()='__param__']/parent::*/descendant::textarea")
 
         """
-        self.local_field_xpath = xpaths
+        self.local_field_xpaths = set(xpaths)
 
     @staticmethod
     def set_global_click_xpaths(*xpaths: str):
@@ -242,7 +242,7 @@ class MiUsIn:
         '''
         field_xpath : it set the global_combobox_parent_finding_method_by_xpath class variable
         '''
-        MiUsIn.global_combobox_parent_finding_method_by_xpath = xpaths
+        MiUsIn.global_combobox_parent_finding_method_by_xpaths = set(xpaths)
 
     @staticmethod
     def __create_alert_xpath(alert_message: str):
@@ -521,14 +521,14 @@ class MiUsIn:
         return kwargs
 
     def __create_field_xpath(self, param: str):
-        if self.local_field_xpath is not None:
+        if self.local_field_xpaths is not None:
             field_xpaths = [field_findig_method.replace(InnerStatics.PARAM.value, param) for field_findig_method in
-                            self.local_field_xpath]
+                            self.local_field_xpaths]
             return "|".join(field_xpaths)
 
-        elif MiUsIn.global_field_xpath is not None:
+        elif MiUsIn.global_field_xpaths is not None:
             field_xpaths = [field_findig_method.replace(InnerStatics.PARAM.value, param) for field_findig_method in
-                            MiUsIn.global_field_xpath]
+                            MiUsIn.global_field_xpaths]
             return "|".join(field_xpaths)
         else:
             return ""
@@ -603,10 +603,10 @@ class MiUsIn:
         list_element.click()
 
     def __find_combobox_list_element(self, input_field_xpath: str, dropdown_element_text: str):
-        if self.combobox_parent_finding_method_by_xpath is not None:
-            parent_webelement_xpaths: list = self.combobox_parent_finding_method_by_xpath
-        elif MiUsIn.global_combobox_parent_finding_method_by_xpath is not None:
-            parent_webelement_xpaths: list = MiUsIn.global_combobox_parent_finding_method_by_xpath
+        if len(self.combobox_parent_finding_method_by_xpaths) > 0:
+            parent_webelement_xpaths: set = self.combobox_parent_finding_method_by_xpaths
+        elif len(MiUsIn.global_combobox_parent_finding_method_by_xpaths) > 0:
+            parent_webelement_xpaths: set = MiUsIn.global_combobox_parent_finding_method_by_xpaths
 
         parent_webelement = MiUsIn.driver.find_element(by=By.XPATH,
                                                        value=self.__combobox_parent_xpath(input_field_xpath,
