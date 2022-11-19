@@ -401,17 +401,17 @@ class MiUsIn:
         examples:
 
         """
-        match (identifier, contains):
+        match (identifier is not None, contains):
             case (True, False):
                 xpath = f"//*[text()='{identifier}']"
             case (True, True):
-                xpath = f"//*[contains=(text(),'{identifier}')]"
+                xpath = f"//*[contains(text(),'{identifier}')]"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         clickable_webelement.click()
 
     @__testcase_logging
     @collect_data
-    def click_by_param(self, idetifier: str, xpath: str = None,
+    def click_by_param(self, identifier: str, xpath: str = None,
                        major_bug: bool = False,
                        step_positivity: str = Values.POSITIVE.value,
                        step_description: str = "") -> CaseStep | None:
@@ -428,9 +428,9 @@ class MiUsIn:
         examples:
 
         """
-        created_click_xpath: str = self.__create_click_xpath(idetifier)
+        created_click_xpath: str = self.__create_click_xpath(identifier)
         if xpath is not None:
-            created_click_xpath = xpath.replace(InnerStatics.PARAM.value, idetifier)
+            created_click_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
         elif created_click_xpath == "" and xpath is None:
             raise TypeError("None value in argument: 'parametric_xpath'")
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=created_click_xpath)
@@ -702,13 +702,10 @@ class MiUsIn:
         match identifier:
             case "enter":
                 MiUsIn.action_driver.send_keys(Keys.ENTER).perform()
-                action_type = Values.PRESS_ENTER.value
             case "tab":
                 MiUsIn.action_driver.send_keys(Keys.TAB).perform()
-                action_type = Values.PRESS_TAB.value
             case "esc":
                 MiUsIn.action_driver.send_keys(Keys.ESCAPE).perform()
-                action_type = Values.PRESS_ESC.value
             case _:
                 raise KeyError(f"Unknown key: '{identifier}'")
 
@@ -739,10 +736,9 @@ class MiUsIn:
         Arguments:
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
-            data: the string you want to put into the specified field.
             major_bug: if true and this case-step fail, the remain case-streps will be skipped
             xpath: the visible website element's xpath expresion
-            data: the expected stlye parameter's value
+            data: the expected style parameter's value
             identifier: the style attribute's name in the css
         """
         real_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=identifier)
@@ -797,7 +793,6 @@ class MiUsIn:
         Arguments:
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
-            data: the string you want to put into the specified field.
             major_bug: if true and this case-step fail, the remain case-steps will be skipped
             xpath: a label or an inputfield's xpath expresion
             data: the expected text value

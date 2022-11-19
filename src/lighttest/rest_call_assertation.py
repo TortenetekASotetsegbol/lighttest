@@ -6,7 +6,7 @@ import json
 
 import requests
 from lighttest import mongo_datas as mdb
-from lighttest import general_calls
+from lighttest import rest_calls
 from lighttest.test_summary import ErrorLog as el
 import lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
@@ -23,7 +23,7 @@ default_timelimit_in_seconds = 1
 @dataclass(kw_only=True)
 class RestTest:
     extra_asserts_accepted: bool
-    resp: general_calls.Calls
+    resp: rest_calls.Calls
     id: str = ""
     accepted_status_code: int = 200
     error_desc: str = ""
@@ -31,7 +31,7 @@ class RestTest:
     timelimit_in_seconds: float = 1
 
 
-def assertion(resp: general_calls.Calls, id: str, accepted_status_code: int = 200,
+def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
               error_desc: str = "",
               properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value}, timelimit_in_seconds=1,
               raise_error=False,

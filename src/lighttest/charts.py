@@ -43,8 +43,12 @@ def plot_config(generate_plot):
             if len(kwargs["data"]) == 0:
                 return
 
-        plt.title(kwargs["title"])
-        plt.rc('legend', fontsize=20)
+        plt.figure(figsize=(16, 9))
+        plt.rc('axes', labelsize=14)
+        plt.xticks(fontsize=12), plt.yticks(fontsize=12)
+        plt.margins(y=0.2, x=0.2)
+        plt.title(kwargs["title"], fontsize=32)
+        plt.rc('legend', fontsize=14)
 
         generate_plot(*args, **kwargs)
 
@@ -73,8 +77,8 @@ def generate_figure_from_array(data: DataFrame, x_axis_column: str, y_axis_colum
         return
     chart = sns.catplot(data=data, kind="bar", palette=palette, hue=grouping_column, x=x_axis_column, y=y_axis_column,
                         orient=orientation, legend_out=False, legend=Localisations.UPPER_RIGHT.value)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
+    plt.xlabel(x_label, fontsize=14)
+    plt.ylabel(y_label, fontsize=14)
     plt.title(title)
     plt.margins(y=0.25, x=0.25)
     chart.fig.set_figheight(size_height)
@@ -96,7 +100,7 @@ def generate_pie_chart_from_simple_dict(title: str, data: dict, size_height: flo
     labels: list[str] = [f'{key} ({value} element)' for key, value in data.items()]
     color_palette = sns.color_palette(Palette.PASTEL.value)
     plt.pie(x=values, colors=color_palette, autopct='%.0f%%')
-    plt.legend(labels)
+    plt.legend(labels, bbox_to_anchor=(0.9, 0.9))
 
 
 @plot_config

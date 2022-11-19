@@ -5,13 +5,13 @@ src/lighttest/__init__.py
 src/lighttest/charts.py
 src/lighttest/common_rest_call_datas.py
 src/lighttest/datacollections.py
-src/lighttest/general_calls.py
 src/lighttest/interface_logging.py
 src/lighttest/interface_methods.py
 src/lighttest/mongo_connection.py
 src/lighttest/mongo_datas.py
 src/lighttest/mongo_datashare.py
 src/lighttest/rest_call_assertation.py
+src/lighttest/rest_calls.py
 src/lighttest/sql_methods.py
 src/lighttest/test_summary.py
 src/lighttest.egg-info/PKG-INFO

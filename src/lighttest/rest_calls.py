@@ -13,9 +13,7 @@ from lighttest_supplies.encoding import binary_json_to_json
 from dataclasses import dataclass
 import json
 import aiohttp
-
-# decorator
-from src.lighttest.datacollections import BackendResultDatas
+from lighttest.datacollections import BackendResultDatas
 
 
 def collect_call_request_data(request_function):
