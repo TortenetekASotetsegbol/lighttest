@@ -122,7 +122,7 @@ class ErrorLog:
     def __create_text_log_post(log_directory: str):
         create_logging_directory(log_directory)
         statistics: DataFrame = get_statistics()
-        succesful_testcase_count = len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"'))
+        successful_testcase_count = len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"'))
         total_testcase_count = len(statistics)
         error_count = len(statistics.query(f'result == "{ResultTypes.FAILED.value}"'))
 
@@ -136,7 +136,7 @@ class ErrorLog:
             create.write(f"\ntest_start: {ErrorLog.teststart}")
             create.write(f"\ntotal_testcase_count: {total_testcase_count}")
             create.write(f"\nerror_count: {error_count}")
-            create.write(f"\nsuccesful_testcase_count: {succesful_testcase_count}")
+            create.write(f"\nsuccessful_testcase_count: {successful_testcase_count}")
             create.write(f"\n")
             create.write(f"\nAPI_CALL_ERRORS")
             create.write(f"\n-------------------------------------")

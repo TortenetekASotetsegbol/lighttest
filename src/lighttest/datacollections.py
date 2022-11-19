@@ -85,14 +85,14 @@ class CaseStep:
     """
     contains every necessary information about the case's step.
     """
-    webelement_identifier: str
-    webelement_name: str
+    identifier: str
     fatal_bug: bool
     step_positivity: str
     step_description: str
     step_failed: bool
     step_type: str
     step_error: str
+    xpath: str = ""
 
     data: str = ""
 

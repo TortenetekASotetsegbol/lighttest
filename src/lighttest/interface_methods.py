@@ -49,20 +49,16 @@ def collect_data(mimic_fun):
 
         if "data" not in completed_kwargs.keys():
             completed_kwargs.update({"data": ""})
-
         if "xpath" not in completed_kwargs.keys() or completed_kwargs["xpath"] is None:
-            if "param" in completed_kwargs.keys():
-                completed_kwargs.update({"xpath": completed_kwargs["param"]})
-            elif "find_by_label" in completed_kwargs.keys():
-                completed_kwargs.update({"xpath": completed_kwargs["find_by_label"]})
-            else:
-                completed_kwargs.update({"xpath": ""})
+            completed_kwargs.update({"xpath": ""})
+        if "identifier" not in completed_kwargs.keys() or completed_kwargs["identifier"] is None:
+            completed_kwargs.update({"identifier": ""})
 
         step_datas = CaseStep(step_description=completed_kwargs['step_description'],
                               step_positivity=completed_kwargs['step_positivity'],
-                              webelement_name=completed_kwargs['webelement_name'],
                               fatal_bug=completed_kwargs['major_bug'],
-                              webelement_identifier=completed_kwargs['xpath'], step_failed=step_failed,
+                              identifier=completed_kwargs['identifier'], xpath=completed_kwargs['xpath'],
+                              step_failed=step_failed,
                               step_type=mimic_fun.__name__,
                               data=completed_kwargs['data'], step_error=new_error)
         return step_datas
@@ -387,34 +383,35 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
+    def click(self, xpath: str = None, major_bug: bool = False,
               step_positivity: str = Values.POSITIVE.value,
-              step_description: str = "", find_by_label: str = None, contains: bool = True) -> CaseStep | None:
+              step_description: str = "", identifier: str = None, contains: bool = True) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
         Arguments:
-            xpath: a clickable webelement's field_xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                If false and the case-step failed, the testcase following steps will be skipped.
+            xpath: a clickable webelement's xpath expression
+            identifier: a visible static text(label) on the website
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
+            contains: if true and  the identifier field is used,
+                than it accept any webelement which is contains the identifier
 
         examples:
 
         """
-        match (find_by_label, contains):
+        match (identifier, contains):
             case (True, False):
-                xpath = f"//*[text()='{find_by_label}']"
+                xpath = f"//*[text()='{identifier}']"
             case (True, True):
-                xpath = f"//*[contains=(text(),'{find_by_label}')]"
+                xpath = f"//*[contains=(text(),'{identifier}')]"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         clickable_webelement.click()
 
     @__testcase_logging
     @collect_data
-    def click_by_param(self, param: str, parametric_xpath: str = None, webelement_name: str = "",
+    def click_by_param(self, idetifier: str, xpath: str = None,
                        major_bug: bool = False,
                        step_positivity: str = Values.POSITIVE.value,
                        step_description: str = "") -> CaseStep | None:
@@ -422,74 +419,71 @@ class MiUsIn:
         Mimic a mouse click event as a case-step.
 
         Arguments:
-            xpath: a clickable webelement's field_xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                If false and the case-step failed, the testcase following steps will be skipped.
+            xpath: a clickable webelement's parametric xpath expression
+            identifier: the paramteric indetifier in the click_xpath expression
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
 
         examples:
 
         """
-        created_click_xpath: str = self.__create_click_xpath(param)
-        if parametric_xpath is not None:
-            created_click_xpath = parametric_xpath.replace(InnerStatics.PARAM.value, param)
-        elif created_click_xpath == "" and parametric_xpath is None:
+        created_click_xpath: str = self.__create_click_xpath(idetifier)
+        if xpath is not None:
+            created_click_xpath = xpath.replace(InnerStatics.PARAM.value, idetifier)
+        elif created_click_xpath == "" and xpath is None:
             raise TypeError("None value in argument: 'parametric_xpath'")
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=created_click_xpath)
         clickable_webelement.click()
 
     @__testcase_logging
     @collect_data
-    def double_click(self, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
+    def double_click(self, xpath: str = None, major_bug: bool = False,
                      step_positivity: str = Values.POSITIVE.value,
-                     step_description: str = "", find_by_label: str = None) -> CaseStep | None:
+                     step_description: str = "", identifier: str = None) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
         Arguments:
-            xpath: a clickable webelement's field_xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                If false and the case-step failed, the testcase following steps will be skipped.
+            xpath: a clickable webelement's xpath
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
+            identifier: a visible static text(label) on the website
+
 
         examples:
 
         """
 
-        if find_by_label is not None:
-            xpath = f"//*[text()='{find_by_label}']"
+        if identifier is not None:
+            xpath = f"//*[text()='{identifier}']"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         MiUsIn.action_driver.double_click(on_element=clickable_webelement).perform()
 
     @__testcase_logging
     @collect_data
-    def fill_field(self, field_xpath: str, data: str, webelement_name: str = "", major_bug: bool = False,
+    def fill_field(self, xpath: str, data: str, webelement_name: str = "", major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value,
                    step_description: str = "") -> CaseStep | None:
         """
         Mimic the event of filling a field on a webpage.
 
         Arguments:
-            field_xpath: The field webelement's xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                   If false and the case-step failed, the testcase following steps will be skipped.
+            xpath: The field webelement's xpath
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
             data: the string you want to put into the specified field.
         """
-        field = MiUsIn.driver.find_element(by=By.XPATH, value=field_xpath)
+        field = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         field.click()
         field.clear()
         field.send_keys(data)
 
     @__testcase_logging
     @collect_data
-    def fill_field_by_param(self, param: str, find_field_xpath: str = None, data="", webelement_name: str = "empty",
+    def fill_field_by_param(self, identifier: str, xpath: str = None, data="",
                             major_bug: bool = False,
                             step_positivity: str = Values.POSITIVE.value,
                             step_description: str = "") -> CaseStep | None:
@@ -497,18 +491,17 @@ class MiUsIn:
         Mimic the event of filling a field on a webpage.
 
         Arguments:
-            field_xpath: The field webelement's xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                   If false and the case-step failed, the testcase following steps will be skipped.
+            xpath: The field webelement's parametric xpath
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
             data: the string you want to put into the specified field.
+            identifier: the paramteric indetifier in the field_xpath expression
         """
-        created_field_xpath: str = self.__create_field_xpath(param)
-        if find_field_xpath is not None:
-            created_field_xpath = find_field_xpath.replace(InnerStatics.PARAM.value, param)
-        elif created_field_xpath == "" and find_field_xpath is None:
+        created_field_xpath: str = self.__create_field_xpath(identifier)
+        if xpath is not None:
+            created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
+        elif created_field_xpath == "" and xpath is None:
             raise TypeError("None value in field: 'field_xpath'")
         field = MiUsIn.driver.find_element(by=By.XPATH, value=created_field_xpath)
         field.click()
@@ -516,17 +509,25 @@ class MiUsIn:
         field.send_keys(data)
 
     def fill_form(self, **kwargs):
+        """
+        this function is useful when want to comletea form with many input fields.
+        Just add kw names as fieldnames and kw values as input datas.
+        if the field's name contains spaces, replace those with '_'
+
+        Example:
+            fill_form(Name='John Doe', Date_of_birth='1992.01.20')
+        """
         for key, value in kwargs.items():
-            self.fill_field_by_param(param=str(key).replace("_", " "), data=value)
+            self.fill_field_by_param(identifier=str(key).replace("_", " "), data=value)
         return kwargs
 
     def __create_field_xpath(self, param: str):
-        if self.local_field_xpaths is not None:
+        if len(self.local_field_xpaths) != 0:
             field_xpaths = [field_findig_method.replace(InnerStatics.PARAM.value, param) for field_findig_method in
                             self.local_field_xpaths]
             return "|".join(field_xpaths)
 
-        elif MiUsIn.global_field_xpaths is not None:
+        elif len(MiUsIn.global_field_xpaths) != 0:
             field_xpaths = [field_findig_method.replace(InnerStatics.PARAM.value, param) for field_findig_method in
                             MiUsIn.global_field_xpaths]
             return "|".join(field_xpaths)
@@ -566,40 +567,58 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def select_combobox_element(self, input_field_xpath: str, data: str = "",
-                                webelement_name: str = "",
+    def select_combobox_element(self, xpath: str, data: str = "",
                                 major_bug: bool = False,
                                 step_positivity: str = Values.POSITIVE.value,
                                 step_description: str = "") -> CaseStep | None:
+        """
+        click on a combobox elements.
 
-        self.fill_field(field_xpath=input_field_xpath, data=data,
-                        webelement_name=webelement_name,
+        Arguments:
+            xpath: the combobox's input-field xpath expression
+            data: an element in the dropdown you want to click
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+            step_description: optional. You can write a description, what about this step.
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
+        """
+
+        self.fill_field(xpath=xpath, data=data,
                         major_bug=major_bug,
                         step_positivity=step_positivity,
                         step_description=step_description)
 
-        list_element = self.__find_combobox_list_element(input_field_xpath, data)
+        list_element = self.__find_combobox_list_element(xpath, data)
         list_element.click()
 
     @__testcase_logging
     @collect_data
-    def select_combobox_element_by_param(self, param: str, input_field_xpath: str = None,
+    def select_combobox_element_by_param(self, identifier: str, xpath: str = None,
                                          data: str = "",
-                                         webelement_name: str = "",
                                          major_bug: bool = False,
                                          step_positivity: str = Values.POSITIVE.value,
                                          step_description: str = "") -> CaseStep | None:
+        """
+        use the combobox_parent_finding_method to click on a combobox elements
 
-        self.fill_field_by_param(find_field_xpath=input_field_xpath, data=data,
-                                 webelement_name=webelement_name,
+        Arguments:
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+            step_description: optional. You can write a description, what about this step.
+            data: an element in the dropdown you want to click
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
+            identifier: the paramteric indetifier in the field_xpath expression
+            xpath: the paramteric parametric representation of the input-field xpath.
+                    It can use only with the identifier argument.
+        """
+
+        self.fill_field_by_param(xpath=xpath, data=data,
                                  major_bug=major_bug,
                                  step_positivity=step_positivity,
-                                 step_description=step_description, param=param)
+                                 step_description=step_description, identifier=identifier)
 
-        if input_field_xpath is None:
-            input_field_xpath = self.__create_field_xpath(param)
+        if xpath is None:
+            xpath = self.__create_field_xpath(identifier)
 
-        list_element = self.__find_combobox_list_element(input_field_xpath, data)
+        list_element = self.__find_combobox_list_element(xpath, data)
         list_element.click()
 
     def __find_combobox_list_element(self, input_field_xpath: str, dropdown_element_text: str):
@@ -661,23 +680,26 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def press_key(self, key_to_press: str, webelement_name: str = "", major_bug: bool = False,
+    def press_key(self, identifier: str, major_bug: bool = False,
                   step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> CaseStep | None:
         """
-        Mimic a mouse click event as a case-step.
+        Mimic a key peress.
 
         Arguments:
-            xpath: a clickable webelement's field_xpath
-            webelement_name: optional. You can name the webelement. This parameter is part of the step-log
-            minor_bug: if it true and the case-step failed, the testcase will be continued.
-                If false and the case-step failed, the testcase following steps will be skipped.
+            identifier: a key-code whics is identifie a key
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
 
-        examples:
+        Identifiers:
+            ENTER: 'enter',
+            TAB: 'tab',
+            ESCAPE: 'esc'
+
+        Examples:
 
         """
-        match key_to_press:
+        match identifier:
             case "enter":
                 MiUsIn.action_driver.send_keys(Keys.ENTER).perform()
                 action_type = Values.PRESS_ENTER.value
@@ -688,7 +710,7 @@ class MiUsIn:
                 MiUsIn.action_driver.send_keys(Keys.ESCAPE).perform()
                 action_type = Values.PRESS_ESC.value
             case _:
-                raise KeyError(f"Unknown key: '{key_to_press}'")
+                raise KeyError(f"Unknown key: '{identifier}'")
 
     @staticmethod
     def get_css_attribute(xpath: str, attribute: str) -> str:
@@ -708,14 +730,23 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def match_style(self, xpath: str, attribute: str, expected_value: str, webelement_name: str = "",
+    def match_style(self, xpath: str, identifier: str, data: str,
                     major_bug: bool = False,
                     step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> object:
         """
+        check a style param like color, font type, style, etc.
 
+        Arguments:
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+            step_description: optional. You can write a description, what about this step.
+            data: the string you want to put into the specified field.
+            major_bug: if true and this case-step fail, the remain case-streps will be skipped
+            xpath: the visible website element's xpath expresion
+            data: the expected stlye parameter's value
+            identifier: the style attribute's name in the css
         """
-        real_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=attribute)
-        if real_value != expected_value:
+        real_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=identifier)
+        if real_value != data:
             raise ValueError
 
     def check_style(self, xpath: str, attribute: str, expected_value: str):
@@ -757,13 +788,23 @@ class MiUsIn:
 
     @__testcase_logging
     @collect_data
-    def match_text(self, expected_value: str, xpath: str = None, webelement_name: str = "", major_bug: bool = False,
+    def match_text(self, data: str, xpath: str = None, major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value, step_description: str = "",
-                   by_label: str = None) -> object:
+                   identifier: str = None) -> object:
+        """
+        check a style param like color, font type, style, etc.
 
-        real_value: str = MiUsIn.get_text(xpath=xpath, by_label=by_label)
-        if real_value != expected_value:
+        Arguments:
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+            step_description: optional. You can write a description, what about this step.
+            data: the string you want to put into the specified field.
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            xpath: a label or an inputfield's xpath expresion
+            data: the expected text value
+            identifier: if it is a static text (a label) can use only the label instead of the full xpath expression
+        """
+        real_value: str = MiUsIn.get_text(xpath=xpath, by_label=identifier)
+        if real_value != data:
             raise ValueError
 
 # TODO complite the documentation in sphinx style
-# TODO replace the variety of similar argument-names to universal: data, xpath, identifier
