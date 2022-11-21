@@ -802,4 +802,26 @@ class MiUsIn:
         if real_value != data:
             raise ValueError
 
-# TODO complite the documentation in sphinx style
+    @__testcase_logging
+    @collect_data
+    def parametric_field_value_match(self, data: str, xpath: str, identifier: str):
+        created_field_xpath: str = self.__create_field_xpath(identifier)
+        if xpath is not None:
+            created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
+        elif created_field_xpath == "" and xpath is None:
+            raise TypeError("None value in field: 'field_xpath'")
+        real_value: str = MiUsIn.get_text(xpath=created_field_xpath, by_label=None)
+        if real_value != data:
+            raise ValueError(f"Expected value: {data} real value:{real_value}")
+
+    def match_form_field_values(self, **kwargs):
+        """
+        this function is useful when want to check a full form with loaded inputfield values.
+        Just add kw names as fieldnames and kw values as expexted values.
+        if the field's name contains spaces, replace those with '_'
+
+        Example:
+            match_form_field_values(Name='John Doe', Date_of_birth='1992.01.20')
+        """
+        for key, value in kwargs.items():
+            self.parametric_field_value_match(identifier=str(key).replace("_", " "), data=value)
