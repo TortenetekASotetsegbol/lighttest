@@ -62,7 +62,7 @@ def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
                             statuscode=resp.status_code, perf=resp.response_time, properties=properties, id=id,
                             error_desc=error_desc, request_url=resp.url)
         if raise_error:
-            el.result_to_db()
+            #el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
     ts.new_testresult(result=result_evaluation(result), name=format_rest_uri(resp.url),

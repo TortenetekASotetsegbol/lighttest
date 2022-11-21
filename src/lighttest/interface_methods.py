@@ -759,14 +759,22 @@ class MiUsIn:
             return True
 
     @staticmethod
-    def get_text(xpath: str = None, by_label: str = None):
+    def get_static_text(xpath: str = None, by_label: str = None):
 
         if by_label is not None:
             xpath = f"//*[text()='{by_label}']"
 
         text: str = MiUsIn.driver.find_element(By.XPATH, value=xpath).text
-        if text is None:
-            text = MiUsIn.driver.find_element(By.XPATH, value=xpath).get_property("value")
+
+        return text
+
+    @staticmethod
+    def get_field_text(xpath: str = None, by_label: str = None):
+
+        if by_label is not None:
+            xpath = f"//*[text()='{by_label}']"
+
+        text: str = MiUsIn.driver.find_element(By.XPATH, value=xpath).get_property("value")
 
         return text
 
@@ -774,7 +782,7 @@ class MiUsIn:
         if self.casebreak:
             return None
         try:
-            real_value = MiUsIn.get_text(xpath=xpath, by_label=by_label)
+            real_value = MiUsIn.get_static_text(xpath=xpath, by_label=by_label)
             if real_value != expected_value:
                 raise ValueError
         except (exceptions.WebDriverException, ValueError):
@@ -798,19 +806,21 @@ class MiUsIn:
             data: the expected text value
             identifier: if it is a static text (a label) can use only the label instead of the full xpath expression
         """
-        real_value: str = MiUsIn.get_text(xpath=xpath, by_label=identifier)
+        real_value: str = MiUsIn.get_static_text(xpath=xpath, by_label=identifier)
         if real_value != data:
             raise ValueError
 
     @__testcase_logging
     @collect_data
-    def parametric_field_value_match(self, data: str, xpath: str, identifier: str):
+    def parametric_field_value_match(self, data: str, identifier: str, major_bug: bool = False,
+                                     step_positivity: str = Values.POSITIVE.value, step_description: str = "",
+                                     xpath: str = None):
         created_field_xpath: str = self.__create_field_xpath(identifier)
         if xpath is not None:
             created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
         elif created_field_xpath == "" and xpath is None:
             raise TypeError("None value in field: 'field_xpath'")
-        real_value: str = MiUsIn.get_text(xpath=created_field_xpath, by_label=None)
+        real_value: str = MiUsIn.get_field_text(xpath=created_field_xpath, by_label=None)
         if real_value != data:
             raise ValueError(f"Expected value: {data} real value:{real_value}")
 
