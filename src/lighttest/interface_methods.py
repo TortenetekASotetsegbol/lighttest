@@ -807,8 +807,10 @@ class MiUsIn:
             identifier: if it is a static text (a label) can use only the label instead of the full xpath expression
         """
         real_value: str = MiUsIn.get_static_text(xpath=xpath, by_label=identifier)
+        if data is None:
+            data = ""
         if real_value != data:
-            raise ValueError
+            raise ValueError(f"Expected value: {data} real value: {real_value}")
 
     @__testcase_logging
     @collect_data
@@ -821,8 +823,10 @@ class MiUsIn:
         elif created_field_xpath == "" and xpath is None:
             raise TypeError("None value in field: 'field_xpath'")
         real_value: str = MiUsIn.get_field_text(xpath=created_field_xpath, by_label=None)
+        if data is None:
+            data = ""
         if real_value != data:
-            raise ValueError(f"Expected value: {data} real value:{real_value}")
+            raise ValueError(f"Expected value: {data} real value: {real_value}")
 
     def match_form_field_values(self, **kwargs):
         """
