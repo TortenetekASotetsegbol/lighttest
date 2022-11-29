@@ -36,7 +36,7 @@ def collect_data(mimic_fun):
         completed_kwargs.update(kwargs)
 
         case_object: MiUsIn = args[0]
-        if case_object.casebreak:
+        if case_object.casebreak or completed_kwargs["skip"] == True:
             return None
 
         step_failed: bool = False
@@ -249,7 +249,8 @@ class ClickMethods:
     @collect_data
     def click(self, xpath: str = None, major_bug: bool = False,
               step_positivity: str = Values.POSITIVE.value,
-              step_description: str = "", identifier: str = None, contains: bool = True) -> CaseStep | None:
+              step_description: str = "", identifier: str = None, contains: bool = True,
+              skip: bool = False) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
@@ -278,7 +279,7 @@ class ClickMethods:
     def click_by_param(self, identifier: str, xpath: str = None,
                        major_bug: bool = False,
                        step_positivity: str = Values.POSITIVE.value,
-                       step_description: str = "") -> CaseStep | None:
+                       step_description: str = "", skip: bool = False) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
@@ -304,7 +305,7 @@ class ClickMethods:
     @collect_data
     def double_click(self, xpath: str = None, major_bug: bool = False,
                      step_positivity: str = Values.POSITIVE.value,
-                     step_description: str = "", identifier: str = None) -> CaseStep | None:
+                     step_description: str = "", identifier: str = None, skip: bool = False) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
@@ -352,7 +353,7 @@ class FieldMethods:
     @collect_data
     def fill_field(self, xpath: str, data: str, webelement_name: str = "", major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value,
-                   step_description: str = "") -> CaseStep | None:
+                   step_description: str = "", skip: bool = False) -> CaseStep | None:
         """
         Mimic the event of filling a field on a webpage.
 
@@ -376,7 +377,7 @@ class FieldMethods:
     def fill_field_by_param(self, identifier: str, xpath: str = None, data="",
                             major_bug: bool = False,
                             step_positivity: str = Values.POSITIVE.value,
-                            step_description: str = "") -> CaseStep | None:
+                            step_description: str = "", skip: bool = False) -> CaseStep | None:
         """
         Mimic the event of filling a field on a webpage.
 
@@ -448,7 +449,7 @@ class ValueValidation(FieldMethods):
                            until_not: bool = False, webelement_is_visible=False, webelement_is_clickable=False,
                            alert: str = None, webelement_name: str = "", major_bug: bool = False,
                            step_positivity: str = Values.POSITIVE.value,
-                           step_description: str = "", xpath=None):
+                           step_description: str = "", xpath=None, skip: bool = False):
         """
         Arguments:
            timeout_in_seconds: Set the timer. If the expected condition is not happening under that timeperiod,
@@ -505,7 +506,7 @@ class ValueValidation(FieldMethods):
     @collect_data
     def match_style(self, xpath: str, identifier: str, data: str,
                     major_bug: bool = False,
-                    step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> object:
+                    step_positivity: str = Values.POSITIVE.value, step_description: str = "", skip: bool = False) -> object:
         """
         check a style param like color, font type, style, etc.
 
@@ -570,7 +571,7 @@ class ValueValidation(FieldMethods):
     @collect_data
     def match_text(self, data: str, xpath: str = None, major_bug: bool = False,
                    step_positivity: str = Values.POSITIVE.value, step_description: str = "",
-                   identifier: str = None) -> object:
+                   identifier: str = None, skip: bool = False) -> object:
         """
         check a style param like color, font type, style, etc.
 
@@ -592,7 +593,7 @@ class ValueValidation(FieldMethods):
     @collect_data
     def parametric_field_value_match(self, data: str, identifier: str, major_bug: bool = False,
                                      step_positivity: str = Values.POSITIVE.value, step_description: str = "",
-                                     xpath: str = None):
+                                     xpath: str = None, skip: bool = False):
         created_field_xpath: str = self._create_field_xpath(identifier)
         if xpath is not None:
             created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
@@ -640,7 +641,7 @@ class DropDownMethods:
     def select_combobox_element(self, xpath: str, data: str = "",
                                 major_bug: bool = False,
                                 step_positivity: str = Values.POSITIVE.value,
-                                step_description: str = "") -> CaseStep | None:
+                                step_description: str = "", skip: bool = False) -> CaseStep | None:
         """
         click on a combobox elements.
 
@@ -666,7 +667,7 @@ class DropDownMethods:
                                          data: str = "",
                                          major_bug: bool = False,
                                          step_positivity: str = Values.POSITIVE.value,
-                                         step_description: str = "") -> CaseStep | None:
+                                         step_description: str = "", skip: bool = False) -> CaseStep | None:
         """
         use the combobox_parent_finding_method to click on a combobox elements
 
