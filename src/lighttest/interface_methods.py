@@ -21,6 +21,7 @@ import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes, CaseStep
 from faker import Faker
 from lighttest.datacollections import CaseStep
+from src.lighttest.light_exceptions import NoneAction
 
 fake = Faker()
 
@@ -43,6 +44,8 @@ def collect_data(mimic_fun):
         try:
             mimic_fun(*args, **kwargs)
 
+        except NoneAction:
+            return None
         except (exceptions.WebDriverException, ValueError) as error:
             new_error = error
             step_failed = True
@@ -360,6 +363,9 @@ class FieldMethods:
             step_description: optional. You can write a description, what about this step.
             data: the string you want to put into the specified field.
         """
+
+        if data is None:
+            raise NoneAction
         field = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         field.click()
         field.clear()
@@ -382,6 +388,8 @@ class FieldMethods:
             data: the string you want to put into the specified field.
             identifier: the paramteric indetifier in the field_xpath expression
         """
+        if data is None:
+            raise NoneAction
         created_field_xpath: str = self._create_field_xpath(identifier)
         if xpath is not None:
             created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
@@ -773,7 +781,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
     action_driver: ActionChains = None
 
     def __init__(self, case_name: str, fullsize_windows=True,
-                 screenshots_container_directory: str = "C:\Screenshots", ):
+                 screenshots_container_directory: str = "C:\Screenshots"):
         """
         placeholder
 
