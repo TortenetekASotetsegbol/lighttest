@@ -126,7 +126,7 @@ class CaseManagement:
         frontend_errors - and the steps led to the error - into the log.
         """
         if self.error_in_case:
-            ErrorLog.add_frontend_error(self.steps_of_reproduction)
+            ErrorLog.add_frontend_error({self.case_name: self.steps_of_reproduction})
 
         del self
 
