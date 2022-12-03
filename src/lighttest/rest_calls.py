@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import json
 import aiohttp
 from lighttest.datacollections import BackendResultDatas
+from lighttest.rest_call_assertation import assertion
 
 
 def collect_call_request_data(request_function):
@@ -72,6 +73,10 @@ class Calls:
     @collect_call_request_data
     def put_call(self, uri_path: str, payload: dict, param: str = ""):
         self.response = requests.put(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
+
+    @collect_call_request_data
+    def delete_call(self, uri_path: str, payload: dict, param: str = ""):
+        self.response = requests.delete(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
 
 async def post_req_task(uri_path, request: json, session):
