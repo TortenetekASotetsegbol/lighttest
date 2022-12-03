@@ -31,12 +31,13 @@ def collect_data(mimic_fun):
     signature.apply_defaults()
 
     @wraps(mimic_fun)
-    def collecting_data(*args, **kwargs):
+    def collecting_data(*args, step_positivity: str = Values.POSITIVE.value, major_bug: bool = False,
+                        step_description: str = "", skip: bool = False, **kwargs):
         completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
 
         case_object: MiUsIn = args[0]
-        if case_object.casebreak or completed_kwargs["skip"] == True:
+        if case_object.casebreak or skip:
             return None
 
         step_failed: bool = False
@@ -57,9 +58,9 @@ def collect_data(mimic_fun):
         if "identifier" not in completed_kwargs.keys() or completed_kwargs["identifier"] is None:
             completed_kwargs.update({"identifier": ""})
 
-        step_datas = CaseStep(step_description=completed_kwargs['step_description'],
-                              step_positivity=completed_kwargs['step_positivity'],
-                              fatal_bug=completed_kwargs['major_bug'],
+        step_datas = CaseStep(step_description=step_description,
+                              step_positivity=step_positivity,
+                              fatal_bug=major_bug,
                               identifier=completed_kwargs['identifier'], xpath=completed_kwargs['xpath'],
                               step_failed=step_failed,
                               step_type=mimic_fun.__name__,
@@ -89,7 +90,7 @@ def testcase_logging(testcase_step) -> None:
         case_object.steps_of_reproduction.update(new_step)
 
         if (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
-                step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
+                not step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
             case_object.error_count += 1
             case_object.casebreak_alarm(major_bug=step_datas.fatal_bug)
             MiUsIn._take_a_screenshot(case_object)
@@ -247,19 +248,22 @@ class ClickMethods:
 
     @testcase_logging
     @collect_data
-    def click(self, xpath: str = None, major_bug: bool = False,
-              step_positivity: str = Values.POSITIVE.value,
-              step_description: str = "", identifier: str = None, contains: bool = True,
-              skip: bool = False) -> CaseStep | None:
+    def click(self, xpath: str = None, identifier: str = None, contains: bool = True) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
 
         Arguments:
             xpath: a clickable webelement's xpath expression
             identifier: a visible static text(label) on the website
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
             contains: if true and  the identifier field is used,
                 than it accept any webelement which is contains the identifier
 
@@ -276,19 +280,24 @@ class ClickMethods:
 
     @testcase_logging
     @collect_data
-    def click_by_param(self, identifier: str, xpath: str = None,
-                       major_bug: bool = False,
-                       step_positivity: str = Values.POSITIVE.value,
-                       step_description: str = "", skip: bool = False) -> CaseStep | None:
+    def click_by_param(self, identifier: str, xpath: str = None) -> CaseStep | None:
         """
-        Mimic a mouse click event as a case-step.
+        Mimic a mouse click.
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
 
         Arguments:
             xpath: a clickable webelement's parametric xpath expression
             identifier: the paramteric indetifier in the click_xpath expression
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
+
 
         examples:
 
@@ -303,17 +312,21 @@ class ClickMethods:
 
     @testcase_logging
     @collect_data
-    def double_click(self, xpath: str = None, major_bug: bool = False,
-                     step_positivity: str = Values.POSITIVE.value,
-                     step_description: str = "", identifier: str = None, skip: bool = False) -> CaseStep | None:
+    def double_click(self, xpath: str = None, identifier: str = None) -> CaseStep | None:
         """
         Mimic a mouse click event as a case-step.
 
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
         Arguments:
             xpath: a clickable webelement's xpath
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
             identifier: a visible static text(label) on the website
 
 
@@ -351,17 +364,21 @@ class FieldMethods:
 
     @testcase_logging
     @collect_data
-    def fill_field(self, xpath: str, data: str, webelement_name: str = "", major_bug: bool = False,
-                   step_positivity: str = Values.POSITIVE.value,
-                   step_description: str = "", skip: bool = False) -> CaseStep | None:
+    def fill_field(self, xpath: str, data: str) -> CaseStep | None:
         """
         Mimic the event of filling a field on a webpage.
 
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
         Arguments:
             xpath: The field webelement's xpath
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
             data: the string you want to put into the specified field.
         """
 
@@ -374,18 +391,21 @@ class FieldMethods:
 
     @testcase_logging
     @collect_data
-    def fill_field_by_param(self, identifier: str, xpath: str = None, data="",
-                            major_bug: bool = False,
-                            step_positivity: str = Values.POSITIVE.value,
-                            step_description: str = "", skip: bool = False) -> CaseStep | None:
+    def fill_field_by_param(self, identifier: str, xpath: str = None, data="") -> CaseStep | None:
         """
         Mimic the event of filling a field on a webpage.
 
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
         Arguments:
             xpath: The field webelement's parametric xpath
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
             data: the string you want to put into the specified field.
             identifier: the paramteric indetifier in the field_xpath expression
         """
@@ -447,10 +467,18 @@ class ValueValidation(FieldMethods):
     @collect_data
     def expected_condition(self, timeout_in_seconds: float, expected_condition: expected_conditions = None,
                            until_not: bool = False, webelement_is_visible=False, webelement_is_clickable=False,
-                           alert: str = None, webelement_name: str = "", major_bug: bool = False,
-                           step_positivity: str = Values.POSITIVE.value,
-                           step_description: str = "", xpath=None, skip: bool = False):
+                           alert: str = None, xpath=None):
         """
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
         Arguments:
            timeout_in_seconds: Set the timer. If the expected condition is not happening under that timeperiod,
                                the test-step failed
@@ -504,16 +532,20 @@ class ValueValidation(FieldMethods):
 
     @testcase_logging
     @collect_data
-    def match_style(self, xpath: str, identifier: str, data: str,
-                    major_bug: bool = False,
-                    step_positivity: str = Values.POSITIVE.value, step_description: str = "", skip: bool = False) -> object:
+    def match_style(self, xpath: str, identifier: str, data: str) -> object:
         """
         check a style param like color, font type, style, etc.
 
-        Arguments:
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
             step_description: optional. You can write a description, what about this step.
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
+
+            skip: if true, the method return without any action.
+
+        Arguments:
             xpath: the visible website element's xpath expresion
             data: the expected style parameter's value
             identifier: the style attribute's name in the css
@@ -569,16 +601,20 @@ class ValueValidation(FieldMethods):
 
     @testcase_logging
     @collect_data
-    def match_text(self, data: str, xpath: str = None, major_bug: bool = False,
-                   step_positivity: str = Values.POSITIVE.value, step_description: str = "",
-                   identifier: str = None, skip: bool = False) -> object:
+    def match_text(self, data: str, xpath: str = None, identifier: str = None) -> object:
         """
         check a style param like color, font type, style, etc.
 
-        Arguments:
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
+        Special Keywords:
             major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
+        Arguments:
             xpath: a label or an inputfield's xpath expresion
             data: the expected text value
             identifier: if it is a static text (a label) can use only the label instead of the full xpath expression
@@ -591,9 +627,19 @@ class ValueValidation(FieldMethods):
 
     @testcase_logging
     @collect_data
-    def parametric_field_value_match(self, data: str, identifier: str, major_bug: bool = False,
-                                     step_positivity: str = Values.POSITIVE.value, step_description: str = "",
-                                     xpath: str = None, skip: bool = False):
+    def parametric_field_value_match(self, data: str, identifier: str, xpath: str = None):
+        """
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
+        """
         created_field_xpath: str = self._create_field_xpath(identifier)
         if xpath is not None:
             created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
@@ -638,25 +684,26 @@ class DropDownMethods:
 
     @testcase_logging
     @collect_data
-    def select_combobox_element(self, xpath: str, data: str = "",
-                                major_bug: bool = False,
-                                step_positivity: str = Values.POSITIVE.value,
-                                step_description: str = "", skip: bool = False) -> CaseStep | None:
+    def select_combobox_element(self, xpath: str, data: str = "") -> CaseStep | None:
         """
         click on a combobox elements.
+
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
 
         Arguments:
             xpath: the combobox's input-field xpath expression
             data: an element in the dropdown you want to click
-            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
-            step_description: optional. You can write a description, what about this step.
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
         """
 
-        self.fill_field(xpath=xpath, data=data,
-                        major_bug=major_bug,
-                        step_positivity=step_positivity,
-                        step_description=step_description)
+        self.fill_field(xpath=xpath, data=data)
 
         list_element = self._find_combobox_list_element(xpath, data)
         list_element.click()
@@ -664,27 +711,27 @@ class DropDownMethods:
     @testcase_logging
     @collect_data
     def select_combobox_element_by_param(self, identifier: str, xpath: str = None,
-                                         data: str = "",
-                                         major_bug: bool = False,
-                                         step_positivity: str = Values.POSITIVE.value,
-                                         step_description: str = "", skip: bool = False) -> CaseStep | None:
+                                         data: str = "") -> CaseStep | None:
         """
         use the combobox_parent_finding_method to click on a combobox elements
 
-        Arguments:
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
             step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
+        Arguments:
             data: an element in the dropdown you want to click
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
             identifier: the paramteric indetifier in the field_xpath expression
             xpath: the paramteric parametric representation of the input-field xpath.
                     It can use only with the identifier argument.
         """
 
-        self.fill_field_by_param(xpath=xpath, data=data,
-                                 major_bug=major_bug,
-                                 step_positivity=step_positivity,
-                                 step_description=step_description, identifier=identifier)
+        self.fill_field_by_param(xpath=xpath, data=data, identifier=identifier)
 
         if xpath is None:
             xpath = self._create_field_xpath(identifier)
@@ -855,14 +902,13 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
 
     @testcase_logging
     @collect_data
-    def press_key(self, identifier: str, major_bug: bool = False,
-                  step_positivity: str = Values.POSITIVE.value, step_description: str = "") -> CaseStep | None:
+    def press_key(self, identifier: str) -> CaseStep | None:
         """
         Mimic a key peress.
 
         Arguments:
             identifier: a key-code whics is identifie a key
-            major_bug: if true and this case-step fail, the remain case-streps will be skipped
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
 
