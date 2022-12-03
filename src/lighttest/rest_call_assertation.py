@@ -31,7 +31,7 @@ class RestTest:
     timelimit_in_seconds: float = 1
 
 
-def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
+def assertion(resp: rest_calls.Calls, accepted_status_code: int = 200,
               error_desc: str = "",
               properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value}, timelimit_in_seconds=1,
               raise_error=False,
@@ -49,7 +49,7 @@ def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
 
     Return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
     """
-    ass = RestTest(resp=resp, id=id, accepted_status_code=accepted_status_code, error_desc=error_desc,
+    ass = RestTest(resp=resp, accepted_status_code=accepted_status_code, error_desc=error_desc,
                    properties=properties, timelimit_in_seconds=timelimit_in_seconds,
                    extra_asserts_accepted=boolsum(extra_asserts))
 
@@ -59,7 +59,7 @@ def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
 
     if not successful:
         create_error_record(req_payload=request, req_response=resp.response_json,
-                            statuscode=resp.status_code, perf=resp.response_time, properties=properties, id=id,
+                            statuscode=resp.status_code, perf=resp.response_time, properties=properties,
                             error_desc=error_desc, request_url=resp.url)
         if raise_error:
             #el.result_to_db()
@@ -71,11 +71,11 @@ def assertion(resp: rest_calls.Calls, id: str, accepted_status_code: int = 200,
 
 
 def create_error_record(request_url: str, req_payload: json, req_response: json, statuscode: int, perf: float,
-                        properties: json, id: str,
+                        properties: json,
                         error_desc: str = ""):
     """create an error record from the collected datas"""
     error = BackendError(req_payload=req_payload, req_response=req_response,
-                         statuscode=statuscode, performance_in_seconds=perf, properties=properties, id=id,
+                         statuscode=statuscode, performance_in_seconds=perf, properties=properties,
                          error_desc=error_desc, request_url=format_rest_uri(request_url))
     el.add_error(error.__dict__)
 

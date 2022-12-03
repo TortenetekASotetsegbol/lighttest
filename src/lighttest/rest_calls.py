@@ -15,6 +15,9 @@ import json
 import aiohttp
 from lighttest.datacollections import BackendResultDatas
 from lighttest.rest_call_assertation import assertion
+from lighttest import mongo_datas as mdb
+
+db_e = mdb.testcase_fields
 
 
 def collect_call_request_data(request_function):
@@ -78,6 +81,54 @@ class Calls:
     def delete_call(self, uri_path: str, payload: dict, param: str = ""):
         self.response = requests.delete(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
+    def post_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+                              error_desc: str = "",
+                              properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                              timelimit_in_seconds=1,
+                              raise_error=False,
+                              **extra_asserts):
+        response: Calls = self.post_call(uri_path, payload, param)
+        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+                  timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
+
+        return response
+
+    def put_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+                             error_desc: str = "",
+                             properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                             timelimit_in_seconds=1,
+                             raise_error=False,
+                             **extra_asserts):
+        response: Calls = self.post_put(uri_path, payload, param)
+        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+                  timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
+
+        return response
+
+    def get_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+                             error_desc: str = "",
+                             properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                             timelimit_in_seconds=1,
+                             raise_error=False,
+                             **extra_asserts):
+        response: Calls = self.get_call(uri_path, payload, param)
+        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+                  timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
+
+        return response
+
+    def delete_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+                                error_desc: str = "",
+                                properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                                timelimit_in_seconds=1,
+                                raise_error=False,
+                                **extra_asserts):
+        response: Calls = self.delete_call(uri_path, payload, param)
+        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+                  timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
+
+        return response
+
 
 async def post_req_task(uri_path, request: json, session):
     async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
@@ -92,7 +143,6 @@ async def get_req_task(uri_path, session, request: json, param=""):
 async def put_req_task(uri_path, request: json, session):
     async with session.put(url=cd.base_url + uri_path, json=request) as resp:
         return await collect_async_data(resp=resp, request=request)
-
 
 # decorator
 # def async_collect_call_request_data(request_function):

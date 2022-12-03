@@ -54,7 +54,6 @@ class BackendError:
     statuscode: int
     performance_in_seconds: float
     properties: dict
-    id: str
     error_desc: str
     request_url: str
 
