@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lighttest"
-version = "0.6.4"
+version = "0.6.41"
 authors = [
   { name= "David Toth", email= "tothlldavid@gmail.com" },
 ]

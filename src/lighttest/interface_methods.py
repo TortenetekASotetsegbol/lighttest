@@ -550,21 +550,21 @@ class ValueValidation(FieldMethods):
             data: the expected style parameter's value
             identifier: the style attribute's name in the css
         """
-        real_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=identifier)
-        if real_value != data:
-            raise ValueError
+        actual_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=identifier)
+        if actual_value != data:
+            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
 
     def check_style(self, xpath: str, attribute: str, expected_value: str):
         if self.casebreak:
             return None
         try:
-            real_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=attribute)
-            if real_value != expected_value:
+            actual_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=attribute)
+            if actual_value != expected_value:
                 raise ValueError
         except (exceptions.WebDriverException, ValueError):
             return False
 
-        if real_value == expected_value:
+        if actual_value == expected_value:
             return True
 
     @staticmethod
@@ -591,8 +591,8 @@ class ValueValidation(FieldMethods):
         if self.casebreak:
             return None
         try:
-            real_value = MiUsIn.get_static_text(xpath=xpath, by_label=by_label)
-            if real_value != expected_value:
+            actual_value = MiUsIn.get_static_text(xpath=xpath, by_label=by_label)
+            if actual_value != expected_value:
                 raise ValueError
         except (exceptions.WebDriverException, ValueError):
             return False
@@ -619,11 +619,11 @@ class ValueValidation(FieldMethods):
             data: the expected text value
             identifier: if it is a static text (a label) can use only the label instead of the full xpath expression
         """
-        real_value: str = MiUsIn.get_static_text(xpath=xpath, by_label=identifier)
+        actual_value: str = MiUsIn.get_static_text(xpath=xpath, by_label=identifier)
         if data is None:
             data = ""
-        if real_value != data:
-            raise ValueError(f"Expected value: {data} real value: {real_value}")
+        if actual_value != data:
+            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
 
     @testcase_logging
     @collect_data
@@ -645,11 +645,11 @@ class ValueValidation(FieldMethods):
             created_field_xpath = xpath.replace(InnerStatics.PARAM.value, identifier)
         elif created_field_xpath == "" and xpath is None:
             raise TypeError("None value in field: 'field_xpath'")
-        real_value: str = MiUsIn.get_field_text(xpath=created_field_xpath, by_label=None)
+        actual_value: str = MiUsIn.get_field_text(xpath=created_field_xpath, by_label=None)
         if data is None:
             data = ""
-        if real_value != data:
-            raise ValueError(f"Expected value: {data} real value: {real_value}")
+        if actual_value != data:
+            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
 
     def match_form_field_values(self, **kwargs):
         """
