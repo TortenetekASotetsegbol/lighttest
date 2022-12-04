@@ -51,7 +51,7 @@ def assertion(resp: rest_calls.Calls, accepted_status_code: int = 200,
     """
     ass = RestTest(resp=resp, accepted_status_code=accepted_status_code, error_desc=error_desc,
                    properties=properties, timelimit_in_seconds=timelimit_in_seconds,
-                   extra_asserts_accepted=boolsum(extra_asserts))
+                   extra_asserts_accepted=boolsum([extra_assert(resp) for extra_assert in extra_asserts.values()]))
 
     request = resp.request
     result = is_succesful(ass)
@@ -62,7 +62,7 @@ def assertion(resp: rest_calls.Calls, accepted_status_code: int = 200,
                             statuscode=resp.status_code, perf=resp.response_time, properties=properties,
                             error_desc=error_desc, request_url=resp.url)
         if raise_error:
-            #el.result_to_db()
+            # el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
     ts.new_testresult(result=result_evaluation(result), name=format_rest_uri(resp.url),
