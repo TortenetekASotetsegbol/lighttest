@@ -113,7 +113,8 @@ class ErrorLog:
             "error_count": len(statistics.query(f'result == "{ResultTypes.FAILED.value}"')),
             "succesful_testcase_count": len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"')),
             "API_call_errors": ErrorLog.backend_errors,
-            "frontend_errors": ErrorLog.frontend_errors
+            "frontend_errors": ErrorLog.frontend_errors,
+            "database_errors": ErrorLog.database_errors
 
         }
         return result
