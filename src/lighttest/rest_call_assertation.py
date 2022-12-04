@@ -13,7 +13,7 @@ from lighttest_supplies import encoding as en
 from dataclasses import dataclass, KW_ONLY, field
 from enum import Enum, unique
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
-    TestTypes
+    TestTypes, Calls
 
 db_e = mdb.testcase_fields
 default_timelimit_in_seconds = 1
@@ -22,7 +22,7 @@ default_timelimit_in_seconds = 1
 @dataclass(kw_only=True)
 class RestTest:
     extra_asserts_accepted: bool
-    resp: object
+    resp: Calls
     id: str = ""
     accepted_status_code: int = 200
     error_desc: str = ""
@@ -30,7 +30,7 @@ class RestTest:
     timelimit_in_seconds: float = 1
 
 
-def assertion(resp: object, accepted_status_code: int = 200,
+def assertion(resp: Calls, accepted_status_code: int = 200,
               error_desc: str = "",
               properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value}, timelimit_in_seconds=1,
               raise_error=False,
@@ -54,7 +54,7 @@ def assertion(resp: object, accepted_status_code: int = 200,
 
     request = resp.request
     result = is_succesful(ass)
-    successful = result.fast and result.successful and boolsum(extra_asserts)
+    successful = result.fast and result.successful
 
     if not successful:
         create_error_record(req_payload=request, req_response=resp.response_json,

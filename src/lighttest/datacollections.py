@@ -1,8 +1,19 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import unique, Enum
 
 from sqlalchemy.engine import CursorResult
+
+
+@dataclass(kw_only=True)
+class Calls:
+    response: object = None
+    response_time: float = 0.0
+    request: object = None
+    response_json: dict = field(default_factory={})
+    status_code: int = 0
+    headers: dict = field(default_factory={})
+    url: str = ""
 
 
 @dataclass(kw_only=True)

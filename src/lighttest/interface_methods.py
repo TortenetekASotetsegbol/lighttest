@@ -21,7 +21,7 @@ import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes, CaseStep
 from faker import Faker
 from lighttest.datacollections import CaseStep
-from src.lighttest.light_exceptions import NoneAction
+from lighttest.light_exceptions import NoneAction
 
 fake = Faker()
 
@@ -552,7 +552,7 @@ class ValueValidation(FieldMethods):
         """
         actual_value: str = MiUsIn.get_css_attribute(xpath=xpath, attribute=identifier)
         if actual_value != data:
-            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
+            raise ValueError({"Expected_value": data, "actual_value": actual_value})
 
     def check_style(self, xpath: str, attribute: str, expected_value: str):
         if self.casebreak:
@@ -623,7 +623,7 @@ class ValueValidation(FieldMethods):
         if data is None:
             data = ""
         if actual_value != data:
-            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
+            raise ValueError({"Expected_value": data, "actual_value": actual_value})
 
     @testcase_logging
     @collect_data
@@ -649,7 +649,7 @@ class ValueValidation(FieldMethods):
         if data is None:
             data = ""
         if actual_value != data:
-            raise ValueError({"Expected_value": {data}, "actual_value": {actual_value}})
+            raise ValueError({"Expected_value": data, "actual_value": actual_value})
 
     def match_form_field_values(self, **kwargs):
         """
