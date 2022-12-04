@@ -165,7 +165,7 @@ class ErrorLog:
     def result_to_mongo_db() -> None:
         """Send the collected error records to the mongodb database"""
 
-        mongo_datashare.insert_one(ErrorLog.__create_dictionary_log_post(), collection=ErrorLog.statistics)
+        mongo_datashare.insert_one(ErrorLog.__create_dictionary_log_post())
 
     @staticmethod
     def worktime(testcontroller_fun):
