@@ -46,12 +46,12 @@ def assertion(assertion_fun):
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
-        expected_result: set = set(completed_kwargs["expected_result"])
+        expected_result: list = list(completed_kwargs["expected_result"])
         perf_l = signature_test.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
                                                          timelimit_in_seconds=completed_kwargs[
                                                              "performance_limit_in_seconds"])
-        errors = assertion_fun(*args, **kwargs)
+        errors = list(assertion_fun(*args, **kwargs))
         match: bool = len(errors) == 0
         positivity: str = signature_test.kwargs["properties"][tt.POSITIVITY.value]
         found_error: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (

@@ -61,11 +61,11 @@ def get_global_stats() -> DataFrame:
 
 
 class ErrorLog:
+    project_name: str = ""
     teststart: float
     time_consumed: datetime = 0
     backend_errors: list = []
     frontend_errors: list = []
-    statistics: str = "statistics"
     errors_directory: str = "C:\Logs"
     charts_directory: str = "C:\Figures"
     database_errors: list = []
@@ -107,6 +107,7 @@ class ErrorLog:
     def __create_dictionary_log_post() -> dict:
         statistics: DataFrame = get_statistics()
         result: dict = {
+            "project_name": ErrorLog.project_name,
             "time_consumed_in_seconds": ErrorLog.time_consumed,
             "test_start": ErrorLog.teststart,
             "total_testcase_count": len(statistics),

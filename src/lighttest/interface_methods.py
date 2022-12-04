@@ -48,7 +48,7 @@ def collect_data(mimic_fun):
         except NoneAction:
             return None
         except (exceptions.WebDriverException, ValueError) as error:
-            new_error = error
+            new_error = str(error)
             step_failed = True
 
         if "data" not in completed_kwargs.keys():
