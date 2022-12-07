@@ -8,8 +8,9 @@ from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
 from lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
 import inspect
+import copy
 
-from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes
+from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes, QueryAssertionResult
 
 
 # decorator
@@ -42,7 +43,7 @@ def assertion(assertion_fun):
     signature_test.apply_defaults()
 
     @wraps(assertion_fun)
-    def assertion_method(*args, **kwargs):
+    def assertion_method(*args, show_actual_result: bool, **kwargs):
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
@@ -51,7 +52,14 @@ def assertion(assertion_fun):
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
                                                          timelimit_in_seconds=completed_kwargs[
                                                              "performance_limit_in_seconds"])
-        errors = list(assertion_fun(*args, **kwargs))
+
+        assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
+        errors = list(assertion_result.errors)
+
+        actual_result: set[str] = set({})
+        if show_actual_result:
+            actual_result = [str(result) for result in assertion_result.query_result]
+
         match: bool = len(errors) == 0
         positivity: str = signature_test.kwargs["properties"][tt.POSITIVITY.value]
         found_error: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
@@ -73,7 +81,7 @@ def assertion(assertion_fun):
                                         query=completed_kwargs["result_informations"].query,
                                         expected_query_timelimit=completed_kwargs["performance_limit_in_seconds"],
                                         missing_or_invalid_elements=errors, expected_result=expected_result,
-                                        assertion_type=assertion_fun.__name__)
+                                        assertion_type=assertion_fun.__name__, actual_result=actual_result)
             ErrorLog.database_errors.append(vars(error_post))
         else:
             new_testresult(name=alias, result=ResultTypes.SUCCESSFUL.value,
@@ -138,7 +146,7 @@ class SqlConnection:
             result_set = set(result)
             expected_result_set = set(expected_result)
             errors = expected_result_set.symmetric_difference(result_set)
-        return errors
+        return QueryAssertionResult(errors=errors, query_result=result)
 
     @assertion
     def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[tuple],
@@ -148,11 +156,13 @@ class SqlConnection:
         query_result = result_informations.result
         unmatched_rows: set = set(expected_result)
         there_is_row_left_to_check: bool = True
+        result_copy: set = set({})
         while there_is_row_left_to_check:
             partial_result_set: set = set(query_result.fetchmany(fetch_size))
+            result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
-        return unmatched_rows
+        return QueryAssertionResult(errors=unmatched_rows, query_result=result_copy)
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
@@ -171,9 +181,3 @@ class SqlConnection:
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
     performance_check_result = sql_result.required_time < timelimit_in_seconds
     return performance_check_result
-
-# TODO change the ploting. It must contains automatic size-calibration
-# TODO change the datacollecting method by make them universal.
-#  Before Plotting, the universal informations must be filtered.
-# TODO extract form error_log modul all the statistic class to a new statistics module
-# TODO rename the error_log module to logging

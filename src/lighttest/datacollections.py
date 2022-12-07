@@ -88,6 +88,7 @@ class QueryErrorPost:
     missing_or_invalid_elements: object
     expected_result: set
     assertion_type: str
+    actual_result: list
 
 
 @dataclass(kw_only=True)
@@ -115,3 +116,9 @@ class BackendResultDatas:
     request: json = None
     status_code: int = None
     response_json: json = None
+
+
+@dataclass(kw_only=True)
+class QueryAssertionResult:
+    errors: set
+    query_result: set

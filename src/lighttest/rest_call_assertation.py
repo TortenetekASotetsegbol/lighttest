@@ -4,14 +4,11 @@ A rest apis hívások ellenőrzése
 '''
 import json
 
-import requests
 from lighttest import mongo_datas as mdb
 from lighttest.test_summary import ErrorLog as el
 import lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
-from lighttest_supplies import encoding as en
 from dataclasses import dataclass, KW_ONLY, field
-from enum import Enum, unique
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes, Calls
 

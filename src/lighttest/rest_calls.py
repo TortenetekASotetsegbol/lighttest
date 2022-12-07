@@ -10,7 +10,6 @@ import requests
 from lighttest.common_rest_call_datas import Common as cd
 from time import perf_counter
 from lighttest_supplies.encoding import binary_json_to_json
-from dataclasses import dataclass
 import json
 import aiohttp
 from lighttest.datacollections import BackendResultDatas
