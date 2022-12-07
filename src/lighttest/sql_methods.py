@@ -8,7 +8,6 @@ from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
 from lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
 import inspect
-import copy
 
 from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes, QueryAssertionResult
 
@@ -56,7 +55,7 @@ def assertion(assertion_fun):
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = list(assertion_result.errors)
 
-        actual_result: set[str] = set({})
+        actual_result: list[str] = []
         if show_actual_result:
             actual_result = [str(result) for result in assertion_result.query_result]
 
@@ -169,15 +168,63 @@ class SqlConnection:
                                expected_result: list[tuple] = [],
                                performance_limit_in_seconds: float = 1,
                                properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
-        query_result = result_informations.result
+        query_result = result_informations.result.fetchall()
         errors: set = {}
         try:
             unique_assertion(query_result)
         except AssertionError as error:
             errors = {error.args}
-        return errors
+        return QueryAssertionResult(errors={"error": errors}, query_result=query_result)
+
+    @assertion
+    def deep_subset_match_assertion(self, column_name: str, result_informations: QueryResult,
+                                    expected_result: list[dict],
+                                    fetch_size: int = 1000,
+                                    performance_limit_in_seconds: float = 1,
+                                    properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+
+        result_copy: set = set({})
+        query_result = result_informations.result
+        there_is_row_left_to_check: bool = True
+        errors: list[dict] = []
+        partial_result_set: set = set(query_result.mappings().fetchmany(fetch_size))
+        while there_is_row_left_to_check:
+
+            for expected_row in expected_result:
+                actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
+                                            result=partial_result_set)
+                compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
+                             column_name=column_name)
+                if actual_row is not None:
+                    result_copy.update(set(partial_result_set))
+                    partial_result_set.remove(actual_row)
+
+            partial_result_set = set(query_result.mappings().fetchmany(fetch_size))
+            there_is_row_left_to_check = len(partial_result_set) != 0
+        return QueryAssertionResult(errors=errors, query_result=result_copy)
 
 
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
     performance_check_result = sql_result.required_time < timelimit_in_seconds
     return performance_check_result
+
+
+def find_row_by_id(collumn_name: str, expexted_row: dict, result: set[dict]) -> dict | None:
+    id: object = expexted_row[collumn_name]
+    for row in result:
+        if row[collumn_name] == id:
+            return row
+    return None
+
+
+def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dict], column_name: str) -> None:
+    errors_in_row: set = {}
+    if actual_row is None:
+        error_container.append({"error_in_row": list(expected_row.items()), "id": "Match not found!"})
+        return
+    row_data = set(expected_row.items())
+    row_data.difference_update(set(actual_row.items()))
+    errors_in_row = row_data
+    if len(errors_in_row) != 0:
+        error_container.append(
+            {"error_in_row": list(row_data), "id": {column_name: actual_row[column_name]}})
