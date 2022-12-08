@@ -143,7 +143,7 @@ class SqlConnection:
         return query
 
     @assertion
-    def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[tuple],
+    def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
                                   performance_limit_in_seconds: float = 1,
                                   properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
         """
@@ -161,17 +161,17 @@ class SqlConnection:
              properties: a dictionary, that contains other aspect of the query. Default contained value:
                 {positivity: positive}
         """
-        result = result_informations.result.fetchall()
+        result = result_informations.result.mappings().fetchall()
         identical_match = result == expected_result
         errors: set = {}
         if not identical_match:
-            result_set = set(result)
-            expected_result_set = set(expected_result)
-            errors = expected_result_set.symmetric_difference(result_set)
+            result_set = set({tuple(result_row.items()) for result_row in result})
+            expected_result_set = set({tuple(result_row.items()) for result_row in expected_result})
+            errors = {str(result_row) for result_row in expected_result_set.symmetric_difference(result_set)}
         return QueryAssertionResult(errors=errors, query_result=result)
 
     @assertion
-    def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[tuple],
+    def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
                                fetch_size: int = 1000,
                                performance_limit_in_seconds: float = 1,
                                properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
@@ -193,11 +193,12 @@ class SqlConnection:
                 {positivity: positive}
         """
         query_result = result_informations.result
-        unmatched_rows: set = set(expected_result)
+        unmatched_rows: set = set({tuple(result_row.items()) for result_row in expected_result})
         there_is_row_left_to_check: bool = True
         result_copy: set = set({})
         while there_is_row_left_to_check:
-            partial_result_set: set = set(query_result.fetchmany(fetch_size))
+            partial_result_set: set = set(
+                {tuple(result_row.items()) for result_row in query_result.mappings().fetchmany(fetch_size)})
             result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
