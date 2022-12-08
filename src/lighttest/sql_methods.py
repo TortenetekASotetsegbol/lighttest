@@ -202,7 +202,8 @@ class SqlConnection:
             result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
-        return QueryAssertionResult(errors=unmatched_rows, query_result=result_copy)
+        errors = {str(row) for row in unmatched_rows}
+        return QueryAssertionResult(errors=errors, query_result=result_copy)
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
