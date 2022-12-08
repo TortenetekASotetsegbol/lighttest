@@ -14,6 +14,10 @@ from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, Re
 
 # decorator
 def execute_query(sql_query):
+    """
+    It's a decorator. Use for methods that execute a query.
+    """
+
     @wraps(sql_query)
     def query_method(*args, **kwargs):
         con = None
@@ -38,11 +42,14 @@ def execute_query(sql_query):
 
 # decorator
 def assertion(assertion_fun):
+    """
+    It's a decorator. Use with methods that do assertion.
+    """
     signature_test = inspect.signature(obj=assertion_fun).bind_partial()
     signature_test.apply_defaults()
 
     @wraps(assertion_fun)
-    def assertion_method(*args, show_actual_result: bool, **kwargs):
+    def assertion_method(*args, show_actual_result: bool = True, **kwargs):
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
@@ -103,7 +110,7 @@ class SqlConnection:
         self.cursor = self.engine.connect()
 
     @execute_query
-    def sql_query_by_text(self, text_query: str, alias: str):
+    def sql_query_by_text(self, text_query: str, alias: str) -> QueryResult:
         """
         Create a query on the specified engine.
 
@@ -127,6 +134,7 @@ class SqlConnection:
             format must be the following: table_name.c.column_name
             select_param: the name of the collumn where the filterparam is.
             format must be the following: table_name.c.column_name
+            alias: use this keyword to add this query a name/id
 
         Return: the result_informations-list of the query
 
@@ -138,6 +146,21 @@ class SqlConnection:
     def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[tuple],
                                   performance_limit_in_seconds: float = 1,
                                   properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+        """
+        Check weather the result's and the expected result's length and the contained datas are exactly the same.
+
+        Special keyword arguments:
+            show_actual_result: If true, the error-logpost will contains the full result of the query.
+                Default value: True
+
+        Arguments:
+             result_informations: an object which contains the result datas.
+             expected_result: a list that contains table-rows as tuples.
+             performance_limit_in_seconds: Add a limit to query-response.
+                If it cost more time than that, evaluated as failed query.
+             properties: a dictionary, that contains other aspect of the query. Default contained value:
+                {positivity: positive}
+        """
         result = result_informations.result.fetchall()
         identical_match = result == expected_result
         errors: set = {}
@@ -152,6 +175,23 @@ class SqlConnection:
                                fetch_size: int = 1000,
                                performance_limit_in_seconds: float = 1,
                                properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+
+        """
+        Check weather the expected result is the subset of the actual result.
+
+        Special keyword arguments:
+            show_actual_result: If true, the error-logpost will contains the full result of the query.
+                Default value: True
+
+        Arguments:
+             fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
+             result_informations: an object which contains the result datas.
+             expected_result: a list that contains table-rows as tuples.
+             performance_limit_in_seconds: Add a limit to query-response.
+                If it cost more time than that, evaluated as failed query.
+             properties: a dictionary, that contains other aspect of the query. Default contained value:
+                {positivity: positive}
+        """
         query_result = result_informations.result
         unmatched_rows: set = set(expected_result)
         there_is_row_left_to_check: bool = True
@@ -168,6 +208,22 @@ class SqlConnection:
                                expected_result: list[tuple] = [],
                                performance_limit_in_seconds: float = 1,
                                properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+        """
+            Check weather the expected result is accepted by a custom assertion.
+
+            Special keyword arguments:
+                show_actual_result: If true, the error-logpost will contains the full result of the query.
+                    Default value: True
+
+            Arguments:
+                 result_informations: an object which contains the result datas.
+                 expected_result: a list that contains table-rows as tuples.
+                 performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query.
+                 properties: a dictionary, that contains other aspect of the query. Default contained value:
+                    {positivity: positive}
+        """
+
         query_result = result_informations.result.fetchall()
         errors: set = {}
         try:
@@ -181,8 +237,28 @@ class SqlConnection:
                                     expected_result: list[dict],
                                     fetch_size: int = 1000,
                                     performance_limit_in_seconds: float = 1,
-                                    properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+                                    properties: dict = {
+                                        tt.POSITIVITY.value: tt.POSITIVE.value}) -> QueryAssertionResult:
+        """
+            Check weather the expected result is the subset of the actual result.
+            If the expected row doesn't match with the actual result's row,
+            compare and find which columns are different. Only the different columns appear in the error-logpost.
 
+            Special keyword arguments:
+                show_actual_result: If true, the error-logpost will contains the full result of the query.
+                    Default value: True
+
+            Arguments:
+                 column_name: the column's name that will be used as an id to identify rows in the result
+                    and compare it with the expected result's rows.
+                 fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
+                 result_informations: an object which contains the result datas.
+                 expected_result: a list that contains table-rows as tuples.
+                 performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query.
+                 properties: a dictionary, that contains other aspect of the query. Default contained value:
+                    {positivity: positive}
+        """
         result_copy: set = set({})
         query_result = result_informations.result
         there_is_row_left_to_check: bool = True
@@ -210,6 +286,9 @@ def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> b
 
 
 def find_row_by_id(collumn_name: str, expexted_row: dict, result: set[dict]) -> dict | None:
+    """
+    return a row from the actual result which identified by an id-column in the expected result.
+    """
     id: object = expexted_row[collumn_name]
     for row in result:
         if row[collumn_name] == id:
@@ -218,6 +297,9 @@ def find_row_by_id(collumn_name: str, expexted_row: dict, result: set[dict]) -> 
 
 
 def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dict], column_name: str) -> None:
+    """
+    compare a row from the expected result with a row from the actual result.
+    """
     errors_in_row: set = {}
     if actual_row is None:
         error_container.append({"error_in_row": list(expected_row.items()), "id": "Match not found!"})
