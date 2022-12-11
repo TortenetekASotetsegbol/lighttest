@@ -8,6 +8,7 @@ from sqlalchemy.exc import ProgrammingError, TimeoutError, DatabaseError
 from functools import wraps
 from lighttest.test_summary import ErrorLog, SumDatabaseTests, PerformancePost, new_testresult
 import inspect
+from decimal import Decimal
 
 from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes, QueryAssertionResult
 
@@ -53,18 +54,18 @@ def assertion(assertion_fun):
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
-        expected_result: list = list(completed_kwargs["expected_result"])
+        expected_result: list = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
         perf_l = signature_test.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
                                                          timelimit_in_seconds=completed_kwargs[
                                                              "performance_limit_in_seconds"])
 
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
-        errors = list(assertion_result.errors)
+        errors = _ensure_mongodb_compatible(*assertion_result.errors)
 
         actual_result: list[str] = []
         if show_actual_result:
-            actual_result = [str(result) for result in assertion_result.query_result]
+            actual_result = _ensure_mongodb_compatible(*assertion_result.query_result)
 
         match: bool = len(errors) == 0
         positivity: str = signature_test.kwargs["properties"][tt.POSITIVITY.value]
@@ -167,7 +168,7 @@ class SqlConnection:
         if not identical_match:
             result_set = set({tuple(result_row.items()) for result_row in result})
             expected_result_set = set({tuple(result_row.items()) for result_row in expected_result})
-            errors = {str(result_row) for result_row in expected_result_set.symmetric_difference(result_set)}
+            errors = expected_result_set.symmetric_difference(result_set)
         return QueryAssertionResult(errors=errors, query_result=result)
 
     @assertion
@@ -202,8 +203,8 @@ class SqlConnection:
             result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
-        errors = {str(row) for row in unmatched_rows}
-        return QueryAssertionResult(errors=errors, query_result=result_copy)
+        # errors = {str(row) for row in unmatched_rows}
+        return QueryAssertionResult(errors=unmatched_rows, query_result=result_copy)
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
@@ -279,7 +280,8 @@ class SqlConnection:
 
             partial_result_set = set(query_result.mappings().fetchmany(fetch_size))
             there_is_row_left_to_check = len(partial_result_set) != 0
-        return QueryAssertionResult(errors=errors, query_result=result_copy)
+            formatted_errors: set = {str(tuple(error.items())) for error in errors}
+        return QueryAssertionResult(errors=formatted_errors, query_result=result_copy)
 
 
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
@@ -304,11 +306,38 @@ def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dic
     """
     errors_in_row: set = {}
     if actual_row is None:
-        error_container.append({"error_in_row": list(expected_row.items()), "id": "Match not found!"})
+        error_container.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
         return
     row_data = set(expected_row.items())
     row_data.difference_update(set(actual_row.items()))
     errors_in_row = row_data
     if len(errors_in_row) != 0:
+        formatted_errors: tuple[tuple] = tuple(errors_in_row, )
         error_container.append(
-            {"error_in_row": list(row_data), "id": {column_name: actual_row[column_name]}})
+            {"error_in_row": formatted_errors, "id": {column_name: actual_row[column_name]}})
+
+
+def _ensure_mongodb_compatible(*args):
+    formatted_list: list = []
+    for element in args:
+        formatted_element: dict = _format_list_element(element)
+        formatted_list.append(formatted_element)
+    return formatted_list
+
+
+def _decimals_in_dict_to_int(dictionary: dict):
+    for key in dictionary.keys():
+        if type(dictionary[key]) == Decimal:
+            dictionary[key] = int(dictionary[key])
+
+
+def _format_list_element(element):
+    if type(element) == dict:
+        for key, value in element.items():
+            if type(element[key]) == tuple:
+                element[key] = _format_list_element(element[key])
+
+    new_dict = dict(element)
+    _decimals_in_dict_to_int(new_dict)
+
+    return new_dict
