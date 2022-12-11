@@ -203,7 +203,6 @@ class SqlConnection:
             result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
-        # errors = {str(row) for row in unmatched_rows}
         return QueryAssertionResult(errors=unmatched_rows, query_result=result_copy)
 
     @assertion
@@ -280,8 +279,7 @@ class SqlConnection:
 
             partial_result_set = set(query_result.mappings().fetchmany(fetch_size))
             there_is_row_left_to_check = len(partial_result_set) != 0
-            formatted_errors: set = {str(tuple(error.items())) for error in errors}
-        return QueryAssertionResult(errors=formatted_errors, query_result=result_copy)
+        return QueryAssertionResult(errors=errors, query_result=result_copy)
 
 
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
