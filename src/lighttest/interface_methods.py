@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.webdriver import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
@@ -299,6 +300,34 @@ class ClickMethods:
             raise TypeError("None value in argument: 'parametric_xpath'")
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=created_click_xpath)
         clickable_webelement.click()
+
+    @testcase_logging
+    @collect_data
+    def click_by_webelement(self, webelement: WebElement, identifier: str = "") -> CaseStep | None:
+        """
+        Mimic a mouse click.
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
+
+        Arguments:
+            webelement: a webelement object
+            identifier: an optional name of the webelement.
+
+
+        examples:
+
+        """
+        if webelement is None:
+            raise WebDriverException("expected a webelement object, received None type object")
+        webelement.click()
 
     @testcase_logging
     @collect_data
@@ -655,7 +684,26 @@ class ValueValidation(FieldMethods):
 
     @testcase_logging
     @collect_data
-    def wait_till_website_ready(self, timeout=10, identifier: str = "Not specified"):
+    def wait_till_website_ready(self, timeout: float = 10, identifier: str = "Not specified"):
+
+        """
+        Wait till the website is fully loaded. It use the readyState document.
+        If the website doesn't load under the timeout parameter, it recognised and logged as an error.
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, this the method return without any action.
+
+        Arguments:
+            timeout: maximum accepted loading time. Above this recognised as an error.
+            identifier: you can describe the website or website part that you check the loading time.
+        """
+
         @Utimer.bomb(timeout_in_seconds=timeout)
         def get_ready_state():
             state: bool = self.driver.execute_script("return document.readyState") == "complete"
