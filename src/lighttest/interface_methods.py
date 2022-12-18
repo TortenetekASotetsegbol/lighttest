@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common import exceptions
+from selenium.common import exceptions, WebDriverException
 from lighttest_supplies.general import create_logging_structure, create_logging_directory
 import lighttest.test_summary as ts
 from lighttest.datacollections import TestTypes, ResultTypes, CaseStep
@@ -32,7 +32,8 @@ def collect_data(mimic_fun):
 
     @wraps(mimic_fun)
     def collecting_data(*args, step_positivity: str = Values.POSITIVE.value, major_bug: bool = False,
-                        step_description: str = "", skip: bool = False, **kwargs):
+                        step_description: str = "", skip: bool = False, data: str = "", xpath: str = "",
+                        identifier: str = "", **kwargs):
         completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
 
@@ -51,20 +52,9 @@ def collect_data(mimic_fun):
             new_error = str(error)
             step_failed = True
 
-        if "data" not in completed_kwargs.keys():
-            completed_kwargs.update({"data": ""})
-        if "xpath" not in completed_kwargs.keys() or completed_kwargs["xpath"] is None:
-            completed_kwargs.update({"xpath": ""})
-        if "identifier" not in completed_kwargs.keys() or completed_kwargs["identifier"] is None:
-            completed_kwargs.update({"identifier": ""})
-
-        step_datas = CaseStep(step_description=step_description,
-                              step_positivity=step_positivity,
-                              fatal_bug=major_bug,
-                              identifier=completed_kwargs['identifier'], xpath=completed_kwargs['xpath'],
-                              step_failed=step_failed,
-                              step_type=mimic_fun.__name__,
-                              data=completed_kwargs['data'], step_error=new_error)
+        step_datas = CaseStep(step_description=step_description, step_positivity=step_positivity, fatal_bug=major_bug,
+                              identifier=identifier, xpath=xpath, step_failed=step_failed, step_type=mimic_fun.__name__,
+                              data=data, step_error=new_error)
         return step_datas
 
     return collecting_data
@@ -662,6 +652,19 @@ class ValueValidation(FieldMethods):
         """
         for key, value in kwargs.items():
             self.parametric_field_value_match(identifier=str(key).replace("_", " "), data=value)
+
+    @testcase_logging
+    @collect_data
+    def wait_till_website_ready(self, timeout=10, identifier: str = "Not specified"):
+        @Utimer.bomb(timeout_in_seconds=timeout)
+        def get_ready_state():
+            state: bool = self.driver.execute_script("return document.readyState") == "complete"
+            return state
+
+        try:
+            get_ready_state()
+        except TimeoutError:
+            raise WebDriverException("Website not fully loaded within the specified timeout period")
 
 
 class DropDownMethods:
