@@ -33,8 +33,7 @@ def collect_data(mimic_fun):
 
     @wraps(mimic_fun)
     def collecting_data(*args, step_positivity: str = Values.POSITIVE.value, major_bug: bool = False,
-                        step_description: str = "", skip: bool = False, data: str = "", xpath: str = "",
-                        identifier: str = "", **kwargs):
+                        step_description: str = "", skip: bool = False, **kwargs):
         completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
 
@@ -53,9 +52,20 @@ def collect_data(mimic_fun):
             new_error = str(error)
             step_failed = True
 
-        step_datas = CaseStep(step_description=step_description, step_positivity=step_positivity, fatal_bug=major_bug,
-                              identifier=identifier, xpath=xpath, step_failed=step_failed, step_type=mimic_fun.__name__,
-                              data=data, step_error=new_error)
+        if "data" not in completed_kwargs.keys():
+            completed_kwargs.update({"data": ""})
+        if "xpath" not in completed_kwargs.keys() or completed_kwargs["xpath"] is None:
+            completed_kwargs.update({"xpath": ""})
+        if "identifier" not in completed_kwargs.keys() or completed_kwargs["identifier"] is None:
+            completed_kwargs.update({"identifier": ""})
+
+        step_datas = CaseStep(step_description=step_description,
+                              step_positivity=step_positivity,
+                              fatal_bug=major_bug,
+                              identifier=completed_kwargs['identifier'], xpath=completed_kwargs['xpath'],
+                              step_failed=step_failed,
+                              step_type=mimic_fun.__name__,
+                              data=completed_kwargs['data'], step_error=new_error)
         return step_datas
 
     return collecting_data
