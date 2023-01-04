@@ -42,6 +42,7 @@ def execute_query(sql_query):
 
 
 # decorator
+# decorator
 def assertion(assertion_fun):
     """
     It's a decorator. Use with methods that do assertion.
@@ -50,11 +51,13 @@ def assertion(assertion_fun):
     signature_test.apply_defaults()
 
     @wraps(assertion_fun)
-    def assertion_method(*args, show_actual_result: bool = True, **kwargs):
+    def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True, **kwargs):
+        actual_result: list[dict] = []
+        expected_result: list[dict] = []
+
         completed_kwargs: dict = signature_test.arguments
         completed_kwargs.update(kwargs)
 
-        expected_result: list = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
         perf_l = signature_test.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
                                                          timelimit_in_seconds=completed_kwargs[
@@ -63,7 +66,8 @@ def assertion(assertion_fun):
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = _ensure_mongodb_compatible(*assertion_result.errors)
 
-        actual_result: list[str] = []
+        if show_expected_result:
+            expected_result = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
         if show_actual_result:
             actual_result = _ensure_mongodb_compatible(*assertion_result.query_result)
 
@@ -95,7 +99,7 @@ def assertion(assertion_fun):
                            required_time=completed_kwargs["result_informations"].required_time,
                            test_type=TestTypes.DATABASE.value)
 
-        kwargs["result_informations"].result.close()
+    # kwargs["result_informations"].result.close()
 
     return assertion_method
 
