@@ -285,6 +285,81 @@ class SqlConnection:
             there_is_row_left_to_check = len(partial_result_set) != 0
         return QueryAssertionResult(errors=errors, query_result=result_copy)
 
+    @assertion
+    def query_result_comparator(self, column_name: str, result_informations: QueryResult,
+                                expected_result: QueryResult,
+                                fetch_size: int = 1000,
+                                performance_limit_in_seconds: float = 1,
+                                properties: dict = {
+                                    tt.POSITIVITY.value: tt.POSITIVE.value}) -> QueryAssertionResult:
+        """
+            Check weather the expected result is the subset of the actual result.
+            If the expected row doesn't match with the actual result's row,
+            compare and find which columns are different. Only the different columns appear in the error-logpost.
+
+            Special keyword arguments:
+                show_actual_result: If true, the error-logpost will contains the full actual result of the query. Default value: True \n
+                show_expected_result: If true, the error-logpost will contains the expected result of the query. Default value: True
+
+            Arguments:
+                 column_name: the column's name that will be used as an id to identify rows in the result
+                    and compare it with the expected result's rows.
+                 fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
+                 actual_result: an object which contains the result datas.
+                 expected_result: a list that contains table-rows as tuples.
+                 full_result_check: If true, iterating through the full query by fetch_size
+                 performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query.
+                 properties: a dictionary, that contains other aspect of the query. Default contained value:
+                    {positivity: positive}
+        """
+
+        missing_rows: list[dict] = []
+        result_copy: set = set({})
+        actual_result_rows = result_informations.result
+        expected_result_rows = expected_result.result
+
+        there_is_row_left_to_check: bool = True
+        errors: list[dict] = []
+        partial_result_set: set = set(actual_result_rows.mappings().fetchmany(fetch_size))
+        expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
+        not_founded_rows: set = set()
+        # expected_result.difference_update(partial_result_set)
+        while there_is_row_left_to_check:
+
+            expected_result_set.difference_update(partial_result_set)
+            for expected_row in not_founded_rows:
+                actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
+                                            result=partial_result_set)
+                compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
+                             column_name=column_name, skipp_empty_row=True)
+                if actual_row is not None:
+                    result_copy.update(set(partial_result_set))
+                    partial_result_set.remove(actual_row)
+                else:
+                    not_founded_rows.add(expected_row)
+
+            for expected_row in expected_result_set:
+                actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
+                                            result=partial_result_set)
+                compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
+                             column_name=column_name, skipp_empty_row=False)
+                if actual_row is not None:
+                    result_copy.update(set(partial_result_set))
+                    partial_result_set.remove(actual_row)
+                else:
+                    not_founded_rows.add(expected_row)
+
+            expected_result = set()
+            expected_result = not_founded_rows
+
+            expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
+            partial_result_set = set(actual_result_rows.mappings().fetchmany(fetch_size))
+            there_is_row_left_to_check = len(expected_result_set) != 0
+        for rows in not_founded_rows:
+            errors.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
+        return QueryAssertionResult(errors=errors, query_result=result_copy)
+
 
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:
     performance_check_result = sql_result.required_time < timelimit_in_seconds
@@ -302,12 +377,13 @@ def find_row_by_id(collumn_name: str, expexted_row: dict, result: set[dict]) -> 
     return None
 
 
-def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dict], column_name: str) -> None:
+def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dict], column_name: str,
+                 skipp_empty_row: bool = False) -> None:
     """
     compare a row from the expected result with a row from the actual result.
     """
     errors_in_row: set = {}
-    if actual_row is None:
+    if actual_row is None and not skipp_empty_row:
         error_container.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
         return
     row_data = set(expected_row.items())
@@ -316,7 +392,8 @@ def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dic
     if len(errors_in_row) != 0:
         formatted_errors: tuple[tuple] = tuple(errors_in_row, )
         error_container.append(
-            {"error_in_row": formatted_errors, "id": {column_name: actual_row[column_name]}})
+            {"error_in_row": formatted_errors, "id": {column_name: actual_row[column_name]},
+             "actual_datas": tuple(set(tuple(actual_row.items())).difference(set(expected_row.items())))})
 
 
 def _ensure_mongodb_compatible(*args):
@@ -329,14 +406,14 @@ def _ensure_mongodb_compatible(*args):
 
 def _decimals_in_dict_to_int(dictionary: dict):
     for key in dictionary.keys():
-        if type(dictionary[key]) == Decimal:
+        if isinstance(dictionary[key], Decimal):
             dictionary[key] = int(dictionary[key])
 
 
 def _format_list_element(element):
-    if type(element) == dict:
+    if isinstance(element, dict):
         for key, value in element.items():
-            if type(element[key]) == tuple:
+            if isinstance(element[key], tuple):
                 element[key] = _format_list_element(element[key])
 
     new_dict = dict(element)
