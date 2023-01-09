@@ -353,8 +353,9 @@ class SqlConnection:
             expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
             partial_result_set = set(actual_result_rows.mappings().fetchmany(fetch_size))
             there_is_row_left_to_check = len(expected_result_set) != 0
-        for rows in not_founded_rows:
-            errors.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
+
+            id_errors = ({"error_in_row": tuple(row.items()), "id": "Match not found!"} for row in not_founded_rows)
+            errors.extend(id_errors)
         return QueryAssertionResult(errors=errors, query_result=result_copy)
 
 
