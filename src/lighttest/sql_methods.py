@@ -305,7 +305,7 @@ class SqlConnection:
                  column_name: the column's name that will be used as an id to identify rows in the result
                     and compare it with the expected result's rows.
                  fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
-                 actual_result: an object which contains the result datas.
+                 result_informations: an object which contains the result datas.
                  expected_result: a list that contains table-rows as tuples.
                  full_result_check: If true, iterating through the full query by fetch_size
                  performance_limit_in_seconds: Add a limit to query-response.
@@ -314,7 +314,6 @@ class SqlConnection:
                     {positivity: positive}
         """
 
-        missing_rows: list[dict] = []
         result_copy: set = set({})
         actual_result_rows = result_informations.result
         expected_result_rows = expected_result.result
@@ -324,17 +323,16 @@ class SqlConnection:
         partial_result_set: set = set(actual_result_rows.mappings().fetchmany(fetch_size))
         expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
         not_founded_rows: set = set()
-        # expected_result.difference_update(partial_result_set)
         while there_is_row_left_to_check:
 
             expected_result_set.difference_update(partial_result_set)
+            result_copy.update(partial_result_set)
             for expected_row in not_founded_rows:
                 actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
                                             result=partial_result_set)
                 compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
                              column_name=column_name, skipp_empty_row=True)
                 if actual_row is not None:
-                    result_copy.update(set(partial_result_set))
                     partial_result_set.remove(actual_row)
                 else:
                     not_founded_rows.add(expected_row)
@@ -345,7 +343,6 @@ class SqlConnection:
                 compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
                              column_name=column_name, skipp_empty_row=False)
                 if actual_row is not None:
-                    result_copy.update(set(partial_result_set))
                     partial_result_set.remove(actual_row)
                 else:
                     not_founded_rows.add(expected_row)
