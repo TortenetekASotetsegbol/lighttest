@@ -367,20 +367,27 @@ def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> b
 def find_row_by_id(collumn_name: str, expexted_row: dict, result: set[dict]) -> dict | None:
     """
     return a row from the actual result which identified by an id-column in the expected result.
+
+    Return:
+        If there is matching id, return the row with that id. Else, return None.
     """
-    id: object = expexted_row[collumn_name]
-    for row in result:
-        if row[collumn_name] == id:
-            return row
+    try:
+        id: object = expexted_row[collumn_name]
+        for row in result:
+            if row[collumn_name] == id:
+                return row
+    except KeyError:
+        return None
     return None
 
 
 def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dict], column_name: str,
-                 skipp_empty_row: bool = False) -> None:
+                 skipp_empty_row: bool = False, complete_expected_row: bool = False) -> None:
     """
     compare a row from the expected result with a row from the actual result.
     """
     errors_in_row: set = {}
+
     if actual_row is None and not skipp_empty_row:
         error_container.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
         return
@@ -388,10 +395,27 @@ def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dic
     row_data.difference_update(set(actual_row.items()))
     errors_in_row = row_data
     if len(errors_in_row) != 0:
-        formatted_errors: tuple[tuple] = tuple(errors_in_row, )
-        error_container.append(
-            {"error_in_row": formatted_errors, "id": {column_name: actual_row[column_name]},
-             "actual_datas": tuple(set(tuple(actual_row.items())).difference(set(expected_row.items())))})
+        _add_error_to_container(errors_in_row=errors_in_row, error_container=error_container, actual_row=actual_row,
+                                expected_row=expected_row, complete_expected_row=complete_expected_row,
+                                key_column=column_name)
+
+
+def _add_error_to_container(errors_in_row: set[tuple], key_column: str, error_container: list[dict], actual_row: dict,
+                            expected_row: dict,
+                            complete_expected_row: bool = False):
+    if complete_expected_row:
+        completed_expected_row = dict(actual_row)
+        completed_expected_row.update(expected_row)
+
+    else:
+        completed_expected_row = expected_row
+
+    actual_data = tuple(set(tuple(actual_row.items())).difference(set(tuple(completed_expected_row.items()))))
+    formatted_errors: tuple[tuple] = tuple(errors_in_row, )
+
+    error_container.append(
+        {"error_in_row": formatted_errors, "id": {key_column: actual_row[key_column]},
+         "actual_datas": actual_data})
 
 
 def _ensure_mongodb_compatible(*args):
