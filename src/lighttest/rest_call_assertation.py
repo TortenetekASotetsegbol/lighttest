@@ -4,15 +4,14 @@ A rest apis hívások ellenőrzése
 '''
 import json
 
-from lighttest import mongo_datas as mdb
 from lighttest.test_summary import ErrorLog as el
 import lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
+from src.lighttest_supplies.general_datas import TestType as tt
 from dataclasses import dataclass, KW_ONLY, field
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes, Calls
 
-db_e = mdb.testcase_fields
 default_timelimit_in_seconds = 1
 
 
@@ -23,21 +22,22 @@ class RestTest:
     id: str = ""
     accepted_status_code: int = 200
     error_desc: str = ""
-    properties: dict = field(default_factory={db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value})
+    positivity: str = tt.POSITIVE.value
     timelimit_in_seconds: float = 1
+    attributes: dict = field(default_factory=dict())
 
 
 def assertion(resp: Calls, accepted_status_code: int = 200,
-              error_desc: str = "",
-              properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value}, timelimit_in_seconds=1,
-              raise_error=False,
-              **extra_asserts):
+              error_desc: str = "", attributes: dict = dict(),
+              positivity: json = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
     """
 
 
     Arguments:
-        resp: egy requests objekt, ami tartalmazza a requestet és response minden adatát
-        properties: a mongodb-ből kapott teszteset tulajdonságait tartalmazza, mint pozittivitás, terület, stb.
+        attributes: optional. if there is some unique attrubute of this assertion, you can put it here.
+        resp: egy requests object, ami tartalmazza a requestet és response minden adatát
+        positivity: it determinate how to evaulate the result.
+            it can be "positive" or "negative". default value: "positive"
         accepted_status_code: a pozitív teszteset esetén elfogadott státuszkód
         error_desc: brief description of the error, if the case failed
         extra_asserts: assertions, that necessaries for the case. It can be zero or one or multiple assertions,
@@ -46,7 +46,7 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
     Return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
     """
     ass = RestTest(resp=resp, accepted_status_code=accepted_status_code, error_desc=error_desc,
-                   properties=properties, timelimit_in_seconds=timelimit_in_seconds,
+                   positivity=positivity, timelimit_in_seconds=timelimit_in_seconds, attributes=attributes,
                    extra_asserts_accepted=boolsum([extra_assert(resp) for extra_assert in extra_asserts.values()]))
 
     request = resp.request
@@ -55,8 +55,8 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
 
     if not successful:
         create_error_record(req_payload=request, req_response=resp.response_json,
-                            statuscode=resp.status_code, perf=resp.response_time, properties=properties,
-                            error_desc=error_desc, request_url=resp.url)
+                            statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
+                            attributes=attributes, error_desc=error_desc, request_url=resp.url)
         if raise_error:
             # el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
@@ -73,7 +73,7 @@ def create_error_record(request_url: str, req_payload: json, req_response: json,
     error = BackendError(req_payload=req_payload, req_response=req_response,
                          statuscode=statuscode, performance_in_seconds=perf, properties=properties,
                          error_desc=error_desc, request_url=format_rest_uri(request_url))
-    el.add_error(error.__dict__)
+    el.add_error(vars(error))
 
 
 def result_evaluation(result: TestResult):
@@ -87,11 +87,11 @@ def result_evaluation(result: TestResult):
 
 
 def is_succesful(test_object: RestTest):
-    positivity = test_object.properties[db_e.POZITIVITAS.value]
+    positivity = test_object.positivity
     good_perf = test_object.resp.response_time < test_object.timelimit_in_seconds
     extra_asserts_was_successful = test_object.extra_asserts_accepted
-    positive = positivity == db_e.POSITIVITY_POSITIVE.value
-    negative = positivity == db_e.POSITIVITY_NEGATIVE.value
+    positive = positivity == tt.POSITIVE.value
+    negative = positivity == tt.NEGATIVE.value
     status_code_accepted = test_object.resp.status_code == test_object.accepted_status_code
     is_successful = ((positive and status_code_accepted) or (
             negative and not status_code_accepted)) and extra_asserts_was_successful

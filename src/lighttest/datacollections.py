@@ -60,11 +60,12 @@ class UniversalPerformancePost:
 
 @dataclass(kw_only=True)
 class BackendError:
+    positivity: str
     req_payload: dict
     req_response: dict
     statuscode: int
     performance_in_seconds: float
-    properties: dict
+    attributes: dict
     error_desc: str
     request_url: str
 

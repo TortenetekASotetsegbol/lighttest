@@ -51,7 +51,9 @@ def assertion(assertion_fun):
     signature_test.apply_defaults()
 
     @wraps(assertion_fun)
-    def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True, **kwargs):
+    def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True,
+                         performance_limit_in_seconds: float = 1,
+                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value, **kwargs):
         actual_result: list[dict] = []
         expected_result: list[dict] = []
 
@@ -72,7 +74,6 @@ def assertion(assertion_fun):
             actual_result = _ensure_mongodb_compatible(*assertion_result.query_result)
 
         match: bool = len(errors) == 0
-        positivity: str = signature_test.kwargs["properties"][tt.POSITIVITY.value]
         found_error: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
@@ -90,7 +91,7 @@ def assertion(assertion_fun):
                                         required_time=completed_kwargs["result_informations"].required_time,
                                         error_message=completed_kwargs["result_informations"].error_message,
                                         query=completed_kwargs["result_informations"].query,
-                                        expected_query_timelimit=completed_kwargs["performance_limit_in_seconds"],
+                                        expected_query_timelimit=performance_limit_in_seconds,
                                         missing_or_invalid_elements=errors, expected_result=expected_result,
                                         assertion_type=assertion_fun.__name__, actual_result=actual_result)
             ErrorLog.database_errors.append(vars(error_post))
@@ -148,23 +149,23 @@ class SqlConnection:
         return query
 
     @assertion
-    def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
-                                  performance_limit_in_seconds: float = 1,
-                                  properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+    def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[dict]) -> set[tuple]:
         """
         Check weather the result's and the expected result's length and the contained datas are exactly the same.
 
         Special keyword arguments:
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
+            performance_limit_in_seconds: Add a limit to query-response.
+                If it cost more time than that, evaluated as failed query. default value: 1 second
+            positivity: it determinate how to evaulate the result.
+                it can be "positive" or "negative". default value: "positive"
+            properties: Optional parameter. A dictionary, that contains other aspect of the query.
 
         Arguments:
              result_informations: an object which contains the result datas.
              expected_result: a list that contains table-rows as tuples.
-             performance_limit_in_seconds: Add a limit to query-response.
-                If it cost more time than that, evaluated as failed query.
-             properties: a dictionary, that contains other aspect of the query. Default contained value:
-                {positivity: positive}
+
         """
         result = result_informations.result.mappings().fetchall()
         identical_match = result == expected_result
@@ -177,9 +178,7 @@ class SqlConnection:
 
     @assertion
     def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
-                               fetch_size: int = 1000,
-                               performance_limit_in_seconds: float = 1,
-                               properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+                               fetch_size: int = 1000) -> set[tuple]:
 
         """
         Check weather the expected result is the subset of the actual result.
@@ -187,15 +186,16 @@ class SqlConnection:
         Special keyword arguments:
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
+            performance_limit_in_seconds: Add a limit to query-response.
+                If it cost more time than that, evaluated as failed query. default value: 1 second
+            positivity: it determinate how to evaulate the result.
+                it can be "positive" or "negative". default value: "positive"
+            properties: Optional parameter. A dictionary, that contains other aspect of the query.
 
         Arguments:
              fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
              result_informations: an object which contains the result datas.
              expected_result: a list that contains table-rows as tuples.
-             performance_limit_in_seconds: Add a limit to query-response.
-                If it cost more time than that, evaluated as failed query.
-             properties: a dictionary, that contains other aspect of the query. Default contained value:
-                {positivity: positive}
         """
         query_result = result_informations.result
         unmatched_rows: set = set({tuple(result_row.items()) for result_row in expected_result})
@@ -211,23 +211,23 @@ class SqlConnection:
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
-                               expected_result: list[tuple] = [],
-                               performance_limit_in_seconds: float = 1,
-                               properties: dict = {tt.POSITIVITY.value: tt.POSITIVE.value}) -> set[tuple]:
+                               expected_result: list[tuple] = []) -> set[tuple]:
         """
             Check weather the expected result is accepted by a custom assertion.
 
             Special keyword arguments:
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
+                performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query. default value: 1 second
+                positivity: it determinate how to evaulate the result.
+                    it can be "positive" or "negative". default value: "positive"
+                properties: Optional parameter. A dictionary, that contains other aspect of the query.
 
             Arguments:
                  result_informations: an object which contains the result datas.
                  expected_result: a list that contains table-rows as tuples.
-                 performance_limit_in_seconds: Add a limit to query-response.
-                    If it cost more time than that, evaluated as failed query.
-                 properties: a dictionary, that contains other aspect of the query. Default contained value:
-                    {positivity: positive}
+
         """
 
         query_result = result_informations.result.fetchall()
@@ -241,10 +241,7 @@ class SqlConnection:
     @assertion
     def deep_subset_match_assertion(self, column_name: str, result_informations: QueryResult,
                                     expected_result: list[dict],
-                                    fetch_size: int = 1000,
-                                    performance_limit_in_seconds: float = 1,
-                                    properties: dict = {
-                                        tt.POSITIVITY.value: tt.POSITIVE.value}) -> QueryAssertionResult:
+                                    fetch_size: int = 1000) -> QueryAssertionResult:
         """
             Check weather the expected result is the subset of the actual result.
             If the expected row doesn't match with the actual result's row,
@@ -253,6 +250,11 @@ class SqlConnection:
             Special keyword arguments:
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
+                performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query. default value: 1 second
+                positivity: it determinate how to evaulate the result.
+                    it can be "positive" or "negative". default value: "positive"
+                properties: Optional parameter. A dictionary, that contains other aspect of the query.
 
             Arguments:
                  column_name: the column's name that will be used as an id to identify rows in the result
@@ -260,10 +262,7 @@ class SqlConnection:
                  fetch_size: it set the pagesize of the resultcheck method. default: 1000/page
                  result_informations: an object which contains the result datas.
                  expected_result: a list that contains table-rows as tuples.
-                 performance_limit_in_seconds: Add a limit to query-response.
-                    If it cost more time than that, evaluated as failed query.
-                 properties: a dictionary, that contains other aspect of the query. Default contained value:
-                    {positivity: positive}
+
         """
         result_copy: set = set({})
         query_result = result_informations.result
@@ -288,10 +287,7 @@ class SqlConnection:
     @assertion
     def query_result_comparator(self, column_name: str, result_informations: QueryResult,
                                 expected_result: QueryResult,
-                                fetch_size: int = 1000,
-                                performance_limit_in_seconds: float = 1,
-                                properties: dict = {
-                                    tt.POSITIVITY.value: tt.POSITIVE.value}) -> QueryAssertionResult:
+                                fetch_size: int = 1000) -> QueryAssertionResult:
         """
             Check weather the expected result is the subset of the actual result.
             If the expected row doesn't match with the actual result's row,
@@ -300,6 +296,11 @@ class SqlConnection:
             Special keyword arguments:
                 show_actual_result: If true, the error-logpost will contains the full actual result of the query. Default value: True \n
                 show_expected_result: If true, the error-logpost will contains the expected result of the query. Default value: True
+                performance_limit_in_seconds: Add a limit to query-response.
+                    If it cost more time than that, evaluated as failed query. default value: 1 second
+                positivity: it determinate how to evaulate the result.
+                    it can be "positive" or "negative". default value: "positive"
+                properties: Optional parameter. A dictionary, that contains other aspect of the query.
 
             Arguments:
                  column_name: the column's name that will be used as an id to identify rows in the result
@@ -308,10 +309,6 @@ class SqlConnection:
                  result_informations: an object which contains the result datas.
                  expected_result: a list that contains table-rows as tuples.
                  full_result_check: If true, iterating through the full query by fetch_size
-                 performance_limit_in_seconds: Add a limit to query-response.
-                    If it cost more time than that, evaluated as failed query.
-                 properties: a dictionary, that contains other aspect of the query. Default contained value:
-                    {positivity: positive}
         """
 
         result_copy: set = set({})
