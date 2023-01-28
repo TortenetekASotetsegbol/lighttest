@@ -10,6 +10,7 @@ import requests
 from lighttest.common_rest_call_datas import Common as cd
 from time import perf_counter
 from lighttest_supplies.encoding import binary_json_to_json
+from lighttest_supplies.general_datas import TestType as tt
 import json
 import aiohttp
 from lighttest.datacollections import BackendResultDatas
@@ -82,48 +83,56 @@ class Calls:
 
     def post_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
                               error_desc: str = "",
-                              properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                              attributes: dict = dict(),
+                              positivity: json = tt.POSITIVE.value,
                               timelimit_in_seconds=1,
                               raise_error=False,
                               **extra_asserts):
         response: Calls = self.post_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+        assertion(resp=response, error_desc=error_desc, attributes=attributes, positivity=positivity,
+                  raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
     def put_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
                              error_desc: str = "",
-                             properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                             attributes: dict = dict(),
+                             positivity: json = tt.POSITIVE.value,
                              timelimit_in_seconds=1,
                              raise_error=False,
                              **extra_asserts):
         response: Calls = self.post_put(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+                  positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
     def get_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
                              error_desc: str = "",
-                             properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                             attributes: dict = dict(),
+                             positivity: json = tt.POSITIVE.value,
                              timelimit_in_seconds=1,
                              raise_error=False,
                              **extra_asserts):
         response: Calls = self.get_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+                  positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
     def delete_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
                                 error_desc: str = "",
-                                properties: json = {db_e.POZITIVITAS.value: db_e.POSITIVITY_POSITIVE.value},
+                                attributes: dict = dict(),
+                                positivity: json = tt.POSITIVE.value,
                                 timelimit_in_seconds=1,
                                 raise_error=False,
                                 **extra_asserts):
         response: Calls = self.delete_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, properties=properties, raise_error=raise_error,
+        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+                  positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response

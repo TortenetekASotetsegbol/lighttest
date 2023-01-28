@@ -8,7 +8,6 @@ src/lighttest/datacollections.py
 src/lighttest/interface_methods.py
 src/lighttest/light_exceptions.py
 src/lighttest/mongo_connection.py
-src/lighttest/mongo_datas.py
 src/lighttest/mongo_datashare.py
 src/lighttest/rest_call_assertation.py
 src/lighttest/rest_calls.py
