@@ -15,9 +15,6 @@ import json
 import aiohttp
 from lighttest.datacollections import BackendResultDatas
 from lighttest.rest_call_assertation import assertion
-from lighttest import mongo_datas as mdb
-
-db_e = mdb.testcase_fields
 
 
 def collect_call_request_data(request_function):
@@ -70,7 +67,7 @@ class Calls:
         self.response = requests.post(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
     @collect_call_request_data
-    def get_call(self, uri_path: str, param="", payload: dict = {}):
+    def get_call(self, uri_path: str,  payload: dict = {}, param=""):
         self.response = requests.get(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
     @collect_call_request_data
