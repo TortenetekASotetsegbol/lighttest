@@ -7,7 +7,7 @@ import json
 from lighttest.test_summary import ErrorLog as el
 import lighttest.test_summary as ts
 from lighttest_supplies.general import boolsum, format_rest_uri
-from src.lighttest_supplies.general_datas import TestType as tt
+from lighttest_supplies.general_datas import TestType as tt
 from dataclasses import dataclass, KW_ONLY, field
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes, Calls

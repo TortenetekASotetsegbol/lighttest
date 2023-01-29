@@ -802,13 +802,14 @@ class DropDownMethods:
 
     def _combobox_parent_xpath(self, input_field_xpath: str, parent_webelement_xpaths: list):
         field_list: list = input_field_xpath.split("|")
-        all_parent_xpaths: list = []
+        all_parent_xpaths: set = set()
         for field_xpath in field_list:
-            parent_webelement_xpaths = tuple(
-                f"{field_xpath}{find_parent_parameter}" for find_parent_parameter in parent_webelement_xpaths)
+            new_parent_webelement_xpaths: set = {
+                f"{field_xpath}{find_parent_parameter}" for find_parent_parameter in parent_webelement_xpaths}
 
-            all_parent_xpaths.append("|".join(parent_webelement_xpaths))
-        return "|".join(all_parent_xpaths)
+            all_parent_xpaths.update(new_parent_webelement_xpaths)
+        combobox_parent_xpath: str = "|".join(all_parent_xpaths)
+        return combobox_parent_xpath
 
 
 class NavigationMethods:
