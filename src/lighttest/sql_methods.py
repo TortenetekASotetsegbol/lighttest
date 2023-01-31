@@ -47,23 +47,23 @@ def assertion(assertion_fun):
     """
     It's a decorator. Use with methods that do assertion.
     """
-    signature_test = inspect.signature(obj=assertion_fun).bind_partial()
-    signature_test.apply_defaults()
+    signature = inspect.signature(obj=assertion_fun).bind_partial()
+    signature.apply_defaults()
 
     @wraps(assertion_fun)
     def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True,
                          performance_limit_in_seconds: float = 1,
-                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value, **kwargs):
+                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value,
+                         **kwargs) -> QueryAssertionResult:
         actual_result: list[dict] = []
         expected_result: list[dict] = []
 
-        completed_kwargs: dict = signature_test.arguments
+        completed_kwargs: dict = signature.arguments
         completed_kwargs.update(kwargs)
 
-        perf_l = signature_test.args
+        perf_l = signature.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
-                                                         timelimit_in_seconds=completed_kwargs[
-                                                             "performance_limit_in_seconds"])
+                                                         timelimit_in_seconds=performance_limit_in_seconds)
 
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = _ensure_mongodb_compatible(*assertion_result.errors)
@@ -100,7 +100,7 @@ def assertion(assertion_fun):
                            required_time=completed_kwargs["result_informations"].required_time,
                            test_type=TestTypes.DATABASE.value)
 
-    # kwargs["result_informations"].result.close()
+        return assertion_result
 
     return assertion_method
 
@@ -149,7 +149,8 @@ class SqlConnection:
         return query
 
     @assertion
-    def identical_match_assertion(self, result_informations: QueryResult, expected_result: list[dict]) -> set[tuple]:
+    def identical_match_assertion(self, result_informations: QueryResult,
+                                  expected_result: list[dict]) -> QueryAssertionResult:
         """
         Check weather the result's and the expected result's length and the contained datas are exactly the same.
 
@@ -178,7 +179,7 @@ class SqlConnection:
 
     @assertion
     def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
-                               fetch_size: int = 1000) -> set[tuple]:
+                               fetch_size: int = 1000) -> QueryAssertionResult:
 
         """
         Check weather the expected result is the subset of the actual result.
@@ -211,7 +212,7 @@ class SqlConnection:
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
-                               expected_result: list[tuple] = []) -> set[tuple]:
+                               expected_result: list[dict] = []) -> QueryAssertionResult:
         """
             Check weather the expected result is accepted by a custom assertion.
 
@@ -230,7 +231,7 @@ class SqlConnection:
 
         """
 
-        query_result = result_informations.result.fetchall()
+        query_result = result_informations.result.mappings().fetchall()
         errors: set = {}
         try:
             unique_assertion(query_result)
@@ -322,9 +323,20 @@ class SqlConnection:
         not_founded_rows: set = set()
         while there_is_row_left_to_check:
 
-            expected_result_set.difference_update(partial_result_set)
             result_copy.update(partial_result_set)
-            for expected_row in not_founded_rows:
+            sim_dif: set = expected_result_set.symmetric_difference(partial_result_set)
+            expected_result_set.intersection_update(sim_dif)
+            partial_result_set.intersection_update(sim_dif)
+            for expected_row in not_founded_rows.copy():
+                actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
+                                            result=partial_result_set)
+                compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
+                             column_name=column_name, skipp_empty_row=True)
+                if actual_row is not None:
+                    not_founded_rows.remove(expected_row)
+                    partial_result_set.remove(actual_row)
+
+            for expected_row in expected_result_set:
                 actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
                                             result=partial_result_set)
                 compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
@@ -334,25 +346,13 @@ class SqlConnection:
                 else:
                     not_founded_rows.add(expected_row)
 
-            for expected_row in expected_result_set:
-                actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
-                                            result=partial_result_set)
-                compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
-                             column_name=column_name, skipp_empty_row=False)
-                if actual_row is not None:
-                    partial_result_set.remove(actual_row)
-                else:
-                    not_founded_rows.add(expected_row)
-
-            expected_result = set()
-            expected_result = not_founded_rows
-
             expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
-            partial_result_set = set(actual_result_rows.mappings().fetchmany(fetch_size))
-            there_is_row_left_to_check = len(expected_result_set) != 0
+            partial_result_set = set(actual_result_rows.mappings().fetchmany(fetch_size)).union(partial_result_set)
+            there_is_row_left_to_check = (len(expected_result_set) + len(not_founded_rows) != 0) and (
+                    len(partial_result_set) and len(expected_result_set) != 0)
 
-            id_errors = ({"error_in_row": tuple(row.items()), "id": "Match not found!"} for row in not_founded_rows)
-            errors.extend(id_errors)
+        id_errors = ({"row_not_found": tuple(row.items())} for row in not_founded_rows)
+        errors.extend(id_errors)
         return QueryAssertionResult(errors=errors, query_result=result_copy)
 
 
@@ -388,13 +388,14 @@ def compare_rows(expected_row: dict, actual_row: dict, error_container: list[dic
     if actual_row is None and not skipp_empty_row:
         error_container.append({"error_in_row": tuple(expected_row.items()), "id": "Match not found!"})
         return
-    row_data = set(expected_row.items())
-    row_data.difference_update(set(actual_row.items()))
-    errors_in_row = row_data
-    if len(errors_in_row) != 0:
-        _add_error_to_container(errors_in_row=errors_in_row, error_container=error_container, actual_row=actual_row,
-                                expected_row=expected_row, complete_expected_row=complete_expected_row,
-                                key_column=column_name)
+    if actual_row is not None:
+        row_data = set(expected_row.items())
+        row_data.difference_update(set(actual_row.items()))
+        errors_in_row = row_data
+        if len(errors_in_row) != 0:
+            _add_error_to_container(errors_in_row=errors_in_row, error_container=error_container, actual_row=actual_row,
+                                    expected_row=expected_row, complete_expected_row=complete_expected_row,
+                                    key_column=column_name)
 
 
 def _add_error_to_container(errors_in_row: set[tuple], key_column: str, error_container: list[dict], actual_row: dict,

@@ -44,8 +44,9 @@ class SumDatabaseTests:
 
 
 def new_testresult(name: str, result: str, test_type: str, required_time: float):
-    result = UniversalPerformancePost(name=name, result=result, test_type=test_type, required_time=required_time)
-    ErrorLog.result_summary.append(result)
+    result_post: UniversalPerformancePost = UniversalPerformancePost(name=name, result=result, test_type=test_type,
+                                                                     required_time=required_time)
+    ErrorLog.result_summary.append(result_post)
 
 
 def get_statistics() -> DataFrame:
