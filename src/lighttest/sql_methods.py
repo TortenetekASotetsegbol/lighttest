@@ -67,42 +67,47 @@ def assertion(assertion_fun):
 
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = _ensure_mongodb_compatible(*assertion_result.errors)
+        not_found_rows = _ensure_mongodb_compatible(*assertion_result.not_founded_rows)
 
         if show_expected_result:
             expected_result = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
         if show_actual_result:
             actual_result = _ensure_mongodb_compatible(*assertion_result.query_result)
 
-        match: bool = len(errors) == 0
-        found_error: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
+        match: bool = len(errors) + len(not_found_rows) == 0
+        error_detected: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
-        if found_error:
-            if not match:
-                new_testresult(name=alias, result=ResultTypes.FAILED.value,
-                               required_time=completed_kwargs["result_informations"].required_time,
-                               test_type=TestTypes.DATABASE.value)
-            else:
-                new_testresult(name=alias, result=ResultTypes.SLOW.value,
-                               required_time=completed_kwargs["result_informations"].required_time,
-                               test_type=TestTypes.DATABASE.value)
 
+        if error_detected:
             error_post = QueryErrorPost(alias=alias,
                                         required_time=completed_kwargs["result_informations"].required_time,
                                         error_message=completed_kwargs["result_informations"].error_message,
                                         query=completed_kwargs["result_informations"].query,
                                         expected_query_timelimit=performance_limit_in_seconds,
-                                        missing_or_invalid_elements=errors, expected_result=expected_result,
+                                        errors=errors, not_found_rows=not_found_rows,
+                                        expected_result=expected_result,
                                         assertion_type=assertion_fun.__name__, actual_result=actual_result)
             ErrorLog.database_errors.append(vars(error_post))
-        else:
-            new_testresult(name=alias, result=ResultTypes.SUCCESSFUL.value,
-                           required_time=completed_kwargs["result_informations"].required_time,
-                           test_type=TestTypes.DATABASE.value)
+        new_testresult(name=alias, result=_get_testresult_type(error_detected, match),
+                       required_time=completed_kwargs["result_informations"].required_time,
+                       test_type=TestTypes.DATABASE.value)
 
         return assertion_result
 
     return assertion_method
+
+
+def _get_testresult_type(error_detected: bool, match: bool) -> str:
+    """
+    Return the type of the testresult. it can be succesful, slow or failed.
+    """
+    if error_detected and not match:
+        return ResultTypes.FAILED.value
+    elif error_detected and match:
+        return ResultTypes.SLOW.value
+    elif not error_detected and not match:
+        return ResultTypes.SUCCESSFUL.value
 
 
 class SqlConnection:
@@ -175,7 +180,7 @@ class SqlConnection:
             result_set = set({tuple(result_row.items()) for result_row in result})
             expected_result_set = set({tuple(result_row.items()) for result_row in expected_result})
             errors = expected_result_set.symmetric_difference(result_set)
-        return QueryAssertionResult(errors=errors, query_result=result)
+        return QueryAssertionResult(errors=errors, not_found_rows=[], query_result=result)
 
     @assertion
     def subset_match_assertion(self, result_informations: QueryResult, expected_result: list[dict],
@@ -208,7 +213,7 @@ class SqlConnection:
             result_copy.update(partial_result_set)
             unmatched_rows.difference_update(partial_result_set)
             there_is_row_left_to_check = len(partial_result_set) != 0
-        return QueryAssertionResult(errors=unmatched_rows, query_result=result_copy)
+        return QueryAssertionResult(errors=unmatched_rows, not_found_rows=[], query_result=result_copy)
 
     @assertion
     def unique_match_assertion(self, unique_assertion, result_informations: QueryResult,
@@ -237,7 +242,7 @@ class SqlConnection:
             unique_assertion(query_result)
         except AssertionError as error:
             errors = {error.args}
-        return QueryAssertionResult(errors={"error": errors}, query_result=query_result)
+        return QueryAssertionResult(errors={"error": errors}, not_found_rows=[], query_result=query_result)
 
     @assertion
     def deep_subset_match_assertion(self, column_name: str, result_informations: QueryResult,
@@ -269,6 +274,7 @@ class SqlConnection:
         query_result = result_informations.result
         there_is_row_left_to_check: bool = True
         errors: list[dict] = []
+        not_found_rows: list[dict] = []
         partial_result_set: set = set(query_result.mappings().fetchmany(fetch_size))
         while there_is_row_left_to_check:
 
@@ -276,14 +282,16 @@ class SqlConnection:
                 actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
                                             result=partial_result_set)
                 compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
-                             column_name=column_name)
+                             column_name=column_name, skipp_empty_row=True)
                 if actual_row is not None:
                     result_copy.update(set(partial_result_set))
                     partial_result_set.remove(actual_row)
+                else:
+                    not_found_rows.append(expected_row)
 
             partial_result_set = set(query_result.mappings().fetchmany(fetch_size))
             there_is_row_left_to_check = len(partial_result_set) != 0
-        return QueryAssertionResult(errors=errors, query_result=result_copy)
+        return QueryAssertionResult(errors=errors, not_found_rows=not_found_rows, query_result=result_copy)
 
     @assertion
     def query_result_comparator(self, column_name: str, result_informations: QueryResult,
@@ -320,20 +328,20 @@ class SqlConnection:
         errors: list[dict] = []
         partial_result_set: set = set(actual_result_rows.mappings().fetchmany(fetch_size))
         expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
-        not_founded_rows: set = set()
+        not_found_rows: set = set()
         while there_is_row_left_to_check:
 
             result_copy.update(partial_result_set)
             sim_dif: set = expected_result_set.symmetric_difference(partial_result_set)
             expected_result_set.intersection_update(sim_dif)
             partial_result_set.intersection_update(sim_dif)
-            for expected_row in not_founded_rows.copy():
+            for expected_row in not_found_rows.copy():
                 actual_row = find_row_by_id(collumn_name=column_name, expexted_row=expected_row,
                                             result=partial_result_set)
                 compare_rows(expected_row=expected_row, actual_row=actual_row, error_container=errors,
                              column_name=column_name, skipp_empty_row=True)
                 if actual_row is not None:
-                    not_founded_rows.remove(expected_row)
+                    not_found_rows.remove(expected_row)
                     partial_result_set.remove(actual_row)
 
             for expected_row in expected_result_set:
@@ -344,16 +352,14 @@ class SqlConnection:
                 if actual_row is not None:
                     partial_result_set.remove(actual_row)
                 else:
-                    not_founded_rows.add(expected_row)
+                    not_found_rows.add(expected_row)
 
             expected_result_set: set = set(expected_result_rows.mappings().fetchmany(fetch_size))
             partial_result_set = set(actual_result_rows.mappings().fetchmany(fetch_size)).union(partial_result_set)
-            there_is_row_left_to_check = (len(expected_result_set) + len(not_founded_rows) != 0) and (
+            there_is_row_left_to_check = (len(expected_result_set) + len(not_found_rows) != 0) and (
                     len(partial_result_set) and len(expected_result_set) != 0)
 
-        id_errors = ({"row_not_found": tuple(row.items())} for row in not_founded_rows)
-        errors.extend(id_errors)
-        return QueryAssertionResult(errors=errors, query_result=result_copy)
+        return QueryAssertionResult(errors=errors, not_found_rows=list(not_found_rows), query_result=result_copy)
 
 
 def performance_check(sql_result: QueryResult, timelimit_in_seconds: float) -> bool:

@@ -86,7 +86,8 @@ class QueryErrorPost:
     required_time: float
     query: str
     error_message: str
-    missing_or_invalid_elements: object
+    errors: list[dict]
+    not_found_rows: list[dict]
     expected_result: set
     assertion_type: str
     actual_result: list
@@ -122,4 +123,5 @@ class BackendResultDatas:
 @dataclass(kw_only=True)
 class QueryAssertionResult:
     errors: set
+    not_found_rows: list[dict]
     query_result: set
