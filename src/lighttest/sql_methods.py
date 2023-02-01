@@ -67,7 +67,7 @@ def assertion(assertion_fun):
 
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = _ensure_mongodb_compatible(*assertion_result.errors)
-        not_found_rows = _ensure_mongodb_compatible(*assertion_result.not_founded_rows)
+        not_found_rows = _ensure_mongodb_compatible(*assertion_result.not_found_rows)
 
         if show_expected_result:
             expected_result = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
@@ -106,7 +106,7 @@ def _get_testresult_type(error_detected: bool, match: bool) -> str:
         return ResultTypes.FAILED.value
     elif error_detected and match:
         return ResultTypes.SLOW.value
-    elif not error_detected and not match:
+    elif not error_detected and match:
         return ResultTypes.SUCCESSFUL.value
 
 
