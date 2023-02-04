@@ -8,8 +8,7 @@ class Common:
     base_url: str = "http://000.00.00.00:0000/"
     token: str = ""
     headers: json = {"Content-Type": "application/json",
-                     "Accept": "application/json",
-                     "Authorization": f'Bearer {token}'
+                     "Accept": "application/json"
                      }
 
     @staticmethod
@@ -24,7 +23,7 @@ class Common:
         """
         Common.token = new_token
         if update_headers:
-            Common.headers["Authorization"] = f'Bearer {Common.token}'
+            Common.headers.update({"Authorization": f'Bearer {Common.token}'})
 
     @staticmethod
     def reset_headers() -> dict:
