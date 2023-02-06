@@ -30,7 +30,7 @@ def collect_call_request_data(request_function):
 
         call_object.response_json = call_object.response.json()
         call_object.status_code = call_object.response.status_code
-        call_object.headres = call_object.response.headers
+        call_object.headers = call_object.response.headers
         call_object.url = call_object.response.url
         return call_object
 
