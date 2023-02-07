@@ -28,7 +28,10 @@ def collect_call_request_data(request_function):
 
         call_object.request = binary_json_to_json(call_object.response.request.body)
 
-        call_object.response_json = call_object.response.json()
+        try:
+            call_object.response_json = call_object.response.json()
+        except json.decoder.JSONDecodeError:
+            call_object.response_json: dict = {"error": "it is not json format or there is no response object"}
         call_object.status_code = call_object.response.status_code
         call_object.headers = call_object.response.headers
         call_object.url = call_object.response.url
@@ -67,7 +70,7 @@ class Calls:
         self.response = requests.post(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
     @collect_call_request_data
-    def get_call(self, uri_path: str,  payload: dict = {}, param=""):
+    def get_call(self, uri_path: str, payload: dict = {}, param=""):
         self.response = requests.get(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
     @collect_call_request_data

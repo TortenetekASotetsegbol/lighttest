@@ -1,11 +1,11 @@
 [build-system]
 requires = ["setuptools>=61.0", "humps", "pymongo", "aiohttp", "sqlalchemy",
-    "asyncio", "selenium", "webdriver_manager", "numpy", "pandas", "seaborn", "matplotlib", "faker"]
+    "asyncio", "selenium", "webdriver_manager", "numpy", "pandas", "seaborn", "matplotlib", "faker", "psycopg2"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lighttest"
-version = "0.8.3"
+version = "0.8.4"
 authors = [
   { name= "David Toth", email= "tothlldavid@gmail.com" },
 ]
