@@ -29,7 +29,7 @@ class RestTest:
 
 def assertion(resp: Calls, accepted_status_code: int = 200,
               error_desc: str = "", attributes: dict = dict(),
-              positivity: json = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
+              positivity: str = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
     """
 
 
@@ -67,11 +67,13 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
 
 
 def create_error_record(request_url: str, req_payload: json, req_response: json, statuscode: int, perf: float,
-                        properties: json,
+                        attributes: dict = dict(),
+                        positivity: str = tt.POSITIVE.value,
                         error_desc: str = ""):
     """create an error record from the collected datas"""
     error = BackendError(req_payload=req_payload, req_response=req_response,
-                         statuscode=statuscode, performance_in_seconds=perf, properties=properties,
+                         statuscode=statuscode, performance_in_seconds=perf, attributes=attributes,
+                         positivity=positivity,
                          error_desc=error_desc, request_url=format_rest_uri(request_url))
     el.add_error(vars(error))
 
