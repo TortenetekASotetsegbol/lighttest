@@ -1,3 +1,6 @@
+from functools import wraps
+
+
 class Testcase:
     global_step_counter: int
     global_case_name: str
@@ -8,7 +11,7 @@ class Testcase:
         self.step_counter: int = 0
         self.case_steps: list[object] = list()
         self.error_counter: int = 0
-        critical_error: bool = False
+        self.critical_error: bool = False
 
     @staticmethod
     def add_global_case_step(case_step: object):
@@ -25,3 +28,18 @@ class Testcase:
         if self.error_counter > 0:
             ErrorLog.errors.append({self.case_name: self.case_steps})
         del self
+
+    @staticmethod
+    def case_step(case_method):
+        # decorator
+        @wraps(case_method)
+        def method(*args, **kwargs):
+            testcase_object: Testcase = args[0].testcase
+            if testcase_object.critical_error:
+                return
+
+            case_method(*args, *kwargs)
+
+            return None
+
+        return method
