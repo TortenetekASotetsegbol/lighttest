@@ -12,6 +12,8 @@ from decimal import Decimal
 
 from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes, QueryAssertionResult
 
+from src.lighttest.testcase import Testcase
+
 
 # decorator
 def execute_query(sql_query):
@@ -68,6 +70,7 @@ def assertion(assertion_fun):
         assertion_result: QueryAssertionResult = assertion_fun(*args, **kwargs)
         errors = _ensure_mongodb_compatible(*assertion_result.errors)
         not_found_rows = _ensure_mongodb_compatible(*assertion_result.not_found_rows)
+        sql_connection: SqlConnection = args[0]
 
         if show_expected_result:
             expected_result = _ensure_mongodb_compatible(*completed_kwargs["expected_result"])
@@ -79,16 +82,15 @@ def assertion(assertion_fun):
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
 
-        if error_detected:
-            error_post = QueryErrorPost(alias=alias,
-                                        required_time=completed_kwargs["result_informations"].required_time,
-                                        error_message=completed_kwargs["result_informations"].error_message,
-                                        query=completed_kwargs["result_informations"].query,
-                                        expected_query_timelimit=performance_limit_in_seconds,
-                                        errors=errors, not_found_rows=not_found_rows,
-                                        expected_result=expected_result,
-                                        assertion_type=assertion_fun.__name__, actual_result=actual_result)
-            ErrorLog.database_errors.append(vars(error_post))
+        add_sql_step(testcase=sql_connection.testcase, alias=alias,
+                     required_time=completed_kwargs["result_informations"].required_time,
+                     error_message=completed_kwargs["result_informations"].error_message,
+                     query=completed_kwargs["result_informations"].query,
+                     expected_query_timelimit=performance_limit_in_seconds,
+                     errors=errors, not_found_rows=not_found_rows,
+                     expected_result=expected_result,
+                     assertion_type=assertion_fun.__name__, actual_result=actual_result)
+
         new_testresult(name=alias, result=_get_testresult_type(error_detected, match),
                        required_time=completed_kwargs["result_informations"].required_time,
                        test_type=TestTypes.DATABASE.value)
@@ -110,11 +112,30 @@ def _get_testresult_type(error_detected: bool, match: bool) -> str:
         return ResultTypes.SUCCESSFUL.value
 
 
+def add_sql_step(testcase: Testcase, alias: str, expected_query_timelimit: float, required_time: float, query: str,
+                 error_message: str, errors: list[dict], not_found_rows: list[dict],
+                 expected_result: set, assertion_type: str, actual_result: list):
+    step: QueryErrorPost = QueryErrorPost(alias=alias,
+                                          required_time=required_time,
+                                          error_message=error_message,
+                                          query=query,
+                                          expected_query_timelimit=expected_query_timelimit,
+                                          errors=errors, not_found_rows=not_found_rows,
+                                          expected_result=expected_result,
+                                          assertion_type=assertion_type, actual_result=actual_result)
+
+    if testcase is not None:
+        testcase.add_case_step(vars(step))
+    else:
+        Testcase.add_global_case_step(step)
+
+
 class SqlConnection:
 
-    def __init__(self, username, password, dbname, host, dialect_driver, port):
+    def __init__(self, testcase: Testcase, username, password, dbname, host, dialect_driver, port):
         self.engine = sqlalchemy.create_engine(f'{dialect_driver}://{username}:{password}@{host}:{port}/{dbname}')
         self.cursor = self.engine.connect()
+        self.testcase: Testcase = testcase
 
     def connect(self, username, password, dbname, host, dialect_driver, port):
         self.engine = sqlalchemy.create_engine(f'{dialect_driver}://{username}:{password}@{host}:{port}/{dbname}')

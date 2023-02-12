@@ -65,11 +65,9 @@ class ErrorLog:
     project_name: str = ""
     teststart: float
     time_consumed: datetime = 0
-    backend_errors: list = []
-    frontend_errors: list = []
+    errors: list = []
     errors_directory: str = "C:\Logs"
     charts_directory: str = "C:\Figures"
-    database_errors: list = []
     result_summary: list[UniversalPerformancePost] = []
 
     @staticmethod

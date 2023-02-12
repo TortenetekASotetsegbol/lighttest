@@ -24,6 +24,8 @@ from faker import Faker
 from lighttest.datacollections import CaseStep
 from lighttest.light_exceptions import NoneAction
 
+from src.lighttest.testcase import Testcase
+
 fake = Faker()
 
 
@@ -79,16 +81,12 @@ def testcase_logging(testcase_step) -> None:
     """
 
     def asert(*args, **kwargs):
-        case_object: MiUsIn = args[0]
+        miusin: MiUsIn = args[0]
+        case_object = miusin.testcase
         step_datas: CaseStep = testcase_step(*args, **kwargs)
         if step_datas is None:
             return
-        case_object.teststep_count += 1
-
-        new_step: dict = {
-            f'step {case_object.teststep_count}': step_datas.__dict__}
-
-        case_object.steps_of_reproduction.update(new_step)
+        add_case_step(case_object, step_datas)
 
         if (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
                 not step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
@@ -108,8 +106,15 @@ def testcase_logging(testcase_step) -> None:
     return asert
 
 
+def add_case_step(testcase: Testcase, step: object):
+    if testcase is not None:
+        testcase.add_case_step(vars(step))
+    else:
+        Testcase.add_global_case_step(step)
+
+
 class CaseManagement:
-    def __init__(self, case_name: str, screenshots_container_directory: str = "C:\Screenshots"):
+    def __init__(self, testcase: Testcase, case_name: str, screenshots_container_directory: str = "C:\Screenshots"):
         self.local_click_xpaths: set[str] = {}
         self.local_field_xpaths: set[str] = {}
         self.teststep_count = 0
@@ -121,6 +126,7 @@ class CaseManagement:
         self.casebreak = False
         self.combobox_parent_finding_method_by_xpaths: set[str] = {}
         self.error_in_case = False
+        self.testcase: Testcase = testcase
 
     def close_case(self):
         """
@@ -890,7 +896,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
     """
     action_driver: ActionChains = None
 
-    def __init__(self, case_name: str, fullsize_windows=True,
+    def __init__(self, testcase: Testcase, case_name: str, fullsize_windows=True,
                  screenshots_container_directory: str = "C:\Screenshots"):
         """
         placeholder
@@ -900,7 +906,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
             screenshots_container_directory: If during a testcase it find an error
                     the screenshot taken of the error will be stored and catalogised in that directory
         """
-        super().__init__(case_name, screenshots_container_directory)
+        super().__init__(testcase, case_name, screenshots_container_directory)
 
         if MiUsIn.driver is None:
             MiUsIn.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))

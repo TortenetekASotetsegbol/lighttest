@@ -12,6 +12,8 @@ from dataclasses import dataclass, KW_ONLY, field
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes, Calls
 
+from src.lighttest.testcase import Testcase
+
 default_timelimit_in_seconds = 1
 
 
@@ -27,13 +29,14 @@ class RestTest:
     attributes: dict = field(default_factory=dict())
 
 
-def assertion(resp: Calls, accepted_status_code: int = 200,
+def assertion(resp: Calls, testtcase: Testcase, accepted_status_code: int = 200,
               error_desc: str = "", attributes: dict = dict(),
               positivity: str = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
     """
 
 
     Arguments:
+        testtcase: a Testcase object which contains the finished testcase steps
         attributes: optional. if there is some unique attrubute of this assertion, you can put it here.
         resp: egy requests object, ami tartalmazza a requestet és response minden adatát
         positivity: it determinate how to evaulate the result.
@@ -53,10 +56,11 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
     result = is_succesful(ass)
     successful = result.fast and result.successful
 
+    add_rest_api_step(testcase=testtcase, req_payload=request, req_response=resp.response_json,
+                      statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
+                      attributes=attributes, error_desc=error_desc, request_url=resp.url)
+
     if not successful:
-        create_error_record(req_payload=request, req_response=resp.response_json,
-                            statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
-                            attributes=attributes, error_desc=error_desc, request_url=resp.url)
         if raise_error:
             # el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
@@ -76,6 +80,22 @@ def create_error_record(request_url: str, req_payload: json, req_response: json,
                          positivity=positivity,
                          error_desc=error_desc, request_url=format_rest_uri(request_url))
     el.add_error(vars(error))
+
+
+def add_rest_api_step(testcase: Testcase, request_url: str, req_payload: json, req_response: json, statuscode: int,
+                      perf: float,
+                      attributes: dict = dict(),
+                      positivity: str = tt.POSITIVE.value,
+                      error_desc: str = ""):
+    step: BackendError = BackendError(req_payload=req_payload, req_response=req_response,
+                                      statuscode=statuscode, performance_in_seconds=perf, attributes=attributes,
+                                      positivity=positivity,
+                                      error_desc=error_desc, request_url=format_rest_uri(request_url))
+
+    if testcase is not None:
+        testcase.add_case_step(step)
+    else:
+        Testcase.add_global_case_step(step)
 
 
 def result_evaluation(result: TestResult):

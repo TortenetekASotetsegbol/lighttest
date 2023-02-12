@@ -16,6 +16,8 @@ import aiohttp
 from lighttest.datacollections import BackendResultDatas
 from lighttest.rest_call_assertation import assertion
 
+from src.lighttest.testcase import Testcase
+
 
 def collect_call_request_data(request_function):
     def rest_api_call(*args, **kwargs):
@@ -56,7 +58,7 @@ async def collect_async_data(resp: object, request: dict):
 
 class Calls:
 
-    def __init__(self):
+    def __init__(self, testcase: Testcase):
         self.response: object = None
         self.response_time: float = 0.0
         self.request: object = None
@@ -64,6 +66,7 @@ class Calls:
         self.status_code: int = 0
         self.headers: dict = {}
         self.url: str = ""
+        self.testcase: Testcase = testcase
 
     @collect_call_request_data
     def post_call(self, uri_path: str, payload: dict, param: str = ""):
