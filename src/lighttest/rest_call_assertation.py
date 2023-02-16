@@ -12,7 +12,7 @@ from dataclasses import dataclass, KW_ONLY, field
 from lighttest.datacollections import TestResult, ResultTypes, BackendPerformanceStatisticPost, BackendError, \
     TestTypes, Calls
 
-from src.lighttest.testcase import Testcase
+from lighttest.testcase import Testcase
 
 default_timelimit_in_seconds = 1
 
@@ -29,14 +29,14 @@ class RestTest:
     attributes: dict = field(default_factory=dict())
 
 
-def assertion(resp: Calls, testtcase: Testcase, accepted_status_code: int = 200,
+def assertion(resp: Calls, accepted_status_code: int = 200,
               error_desc: str = "", attributes: dict = dict(),
               positivity: str = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
     """
 
 
     Arguments:
-        testtcase: a Testcase object which contains the finished testcase steps
+        testcase: a Testcase object which contains the finished testcase steps
         attributes: optional. if there is some unique attrubute of this assertion, you can put it here.
         resp: egy requests object, ami tartalmazza a requestet és response minden adatát
         positivity: it determinate how to evaulate the result.
@@ -56,7 +56,7 @@ def assertion(resp: Calls, testtcase: Testcase, accepted_status_code: int = 200,
     result = is_succesful(ass)
     successful = result.fast and result.successful
 
-    add_rest_api_step(testcase=testtcase, req_payload=request, req_response=resp.response_json,
+    add_rest_api_step(testcase=resp.testcase, req_payload=request, req_response=resp.response_json,
                       statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
                       attributes=attributes, error_desc=error_desc, request_url=resp.url)
 
@@ -65,8 +65,9 @@ def assertion(resp: Calls, testtcase: Testcase, accepted_status_code: int = 200,
             # el.result_to_db()
             raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
-    ts.new_testresult(result=result_evaluation(result), name=format_rest_uri(resp.url),
-                      required_time=resp.response_time, test_type=TestTypes.BACKEND.value)
+    ts.new_testresult(result=result_evaluation(result), testcase_name=resp.testcase.case_name,
+                      required_time=resp.response_time, test_type=TestTypes.BACKEND.value,
+                      description=format_rest_uri(resp.url))
     return successful
 
 

@@ -16,7 +16,7 @@ import aiohttp
 from lighttest.datacollections import BackendResultDatas
 from lighttest.rest_call_assertation import assertion
 
-from src.lighttest.testcase import Testcase
+from lighttest.testcase import Testcase
 
 
 def collect_call_request_data(request_function):
@@ -84,7 +84,8 @@ class Calls:
     def delete_call(self, uri_path: str, payload: dict, param: str = ""):
         self.response = requests.delete(url=f'{cd.base_url}{uri_path}{param}', headers=cd.headers, json=payload)
 
-    def post_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+    def post_call_with_assert(self, testcase: Testcase, uri_path: str, payload: dict, param: str = "",
+                              accepted_status_code: int = 200,
                               error_desc: str = "",
                               attributes: dict = dict(),
                               positivity: json = tt.POSITIVE.value,
@@ -92,13 +93,14 @@ class Calls:
                               raise_error=False,
                               **extra_asserts):
         response: Calls = self.post_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, attributes=attributes, positivity=positivity,
+        assertion(resp=response, testcase=testcase, error_desc=error_desc, attributes=attributes, positivity=positivity,
                   raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    def put_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+    def put_call_with_assert(self, testcase: Testcase, uri_path: str, payload: dict, param: str = "",
+                             accepted_status_code: int = 200,
                              error_desc: str = "",
                              attributes: dict = dict(),
                              positivity: json = tt.POSITIVE.value,
@@ -106,13 +108,14 @@ class Calls:
                              raise_error=False,
                              **extra_asserts):
         response: Calls = self.post_put(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+        assertion(resp=response, testcase=testcase, error_desc=error_desc, attributes=attributes,
                   positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    def get_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+    def get_call_with_assert(self, testcase: Testcase, uri_path: str, payload: dict, param: str = "",
+                             accepted_status_code: int = 200,
                              error_desc: str = "",
                              attributes: dict = dict(),
                              positivity: json = tt.POSITIVE.value,
@@ -120,13 +123,14 @@ class Calls:
                              raise_error=False,
                              **extra_asserts):
         response: Calls = self.get_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+        assertion(resp=response, testcase=testcase, error_desc=error_desc, attributes=attributes,
                   positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    def delete_call_with_assert(self, uri_path: str, payload: dict, param: str = "", accepted_status_code: int = 200,
+    def delete_call_with_assert(self, testcase: Testcase, uri_path: str, payload: dict, param: str = "",
+                                accepted_status_code: int = 200,
                                 error_desc: str = "",
                                 attributes: dict = dict(),
                                 positivity: json = tt.POSITIVE.value,
@@ -134,7 +138,7 @@ class Calls:
                                 raise_error=False,
                                 **extra_asserts):
         response: Calls = self.delete_call(uri_path, payload, param)
-        assertion(resp=response, error_desc=error_desc, attributes=attributes,
+        assertion(resp=response, testcase=testcase, error_desc=error_desc, attributes=attributes,
                   positivity=positivity, raise_error=raise_error,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 

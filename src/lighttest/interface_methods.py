@@ -90,16 +90,15 @@ def testcase_logging(testcase_step) -> None:
 
         if (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
                 not step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
-            case_object.error_count += 1
-            case_object.casebreak_alarm(major_bug=step_datas.fatal_bug)
-            MiUsIn._take_a_screenshot(case_object)
+            case_object.error_counter += 1
+            # case_object.casebreak_alarm(major_bug=step_datas.fatal_bug)
+            MiUsIn._take_a_screenshot(miusin)
 
-            case_object.error_in_case = True
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.FAILED.value,
                               required_time=0, name=case_object.case_name)
         else:
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.SUCCESSFUL.value,
-                              required_time=0, name=case_object.case_name)
+                              required_time=0, testcase_name=case_object.case_name)
 
         return step_datas
 
@@ -284,6 +283,7 @@ class ClickMethods:
                 xpath = f"//*[contains(text(),'{identifier}')]"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         clickable_webelement.click()
+        MiUsIn.driver.start_tab_mirroring()
 
     @testcase_logging
     @collect_data

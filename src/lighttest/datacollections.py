@@ -53,9 +53,10 @@ class PerformancePost:
 @dataclass(kw_only=True)
 class UniversalPerformancePost:
     test_type: str
-    name: str
+    testcase_name: str
     required_time: float
     result: str
+    description: str
 
 
 @dataclass(kw_only=True)

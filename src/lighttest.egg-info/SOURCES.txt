@@ -13,6 +13,7 @@ src/lighttest/rest_call_assertation.py
 src/lighttest/rest_calls.py
 src/lighttest/sql_methods.py
 src/lighttest/test_summary.py
+src/lighttest/testcase.py
 src/lighttest.egg-info/PKG-INFO
 src/lighttest.egg-info/SOURCES.txt
 src/lighttest.egg-info/dependency_links.txt

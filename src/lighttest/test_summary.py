@@ -22,12 +22,16 @@ from lighttest.datacollections import UniversalPerformancePost
 from lighttest.datacollections import TestTypes, BackendPerformanceStatisticPost, PerformancePost, ResultTypes
 
 
-def get_statistic(test_type: str, *result_types: str) -> DataFrame:
+def get_statistic(test_type: str = None, *result_types: str) -> DataFrame:
     statistics: DataFrame = get_statistics()
     query_result: DataFrame = DataFrame()
     for result_type in result_types:
-        query: str = f'(test_type == "{test_type}") and (result == "{result_type}")'
-        query_result = pd.concat([query_result, statistics.query(query)], ignore_index=True)
+        expression: str = ""
+        if test_type is None:
+            expression = f'result == "{result_type}"'
+        else:
+            expression = f'(test_type == "{test_type}") and (result == "{result_type}")'
+        query_result = pd.concat([query_result, statistics.query(expression)], ignore_index=True)
     return query_result
 
 
@@ -43,9 +47,11 @@ class SumDatabaseTests:
                 "successful_queries": SumDatabaseTests.successful_queries}
 
 
-def new_testresult(name: str, result: str, test_type: str, required_time: float):
-    result_post: UniversalPerformancePost = UniversalPerformancePost(name=name, result=result, test_type=test_type,
-                                                                     required_time=required_time)
+def new_testresult(name: str, result: str, test_type: str, required_time: float, description: str = ""):
+    result_post: UniversalPerformancePost = UniversalPerformancePost(testcase_name=name, result=result,
+                                                                     test_type=test_type,
+                                                                     required_time=required_time,
+                                                                     description=description)
     ErrorLog.result_summary.append(result_post)
 
 
@@ -81,7 +87,7 @@ class ErrorLog:
                                                        ResultTypes.SLOW.value)),
             TestTypes.DATABASE.value: len(get_statistic(TestTypes.DATABASE.value, ResultTypes.FAILED.value,
                                                         ResultTypes.SLOW.value)),
-            "successful_testcases": len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"'))
+            "successful_steps": len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"'))
         }
         return error_statistic
 
@@ -179,7 +185,7 @@ class ErrorLog:
         return run_testcases
 
     @staticmethod
-    def get_errors_per_frontendcases():
+    def get_errors_per_testcase():
         """
 
         Collumns:
@@ -188,10 +194,11 @@ class ErrorLog:
             A Dataframe that show how many errors occured per testcase
 
         """
-        frontend_errors: DataFrame = get_statistic(TestTypes.FRONTEND.value, ResultTypes.FAILED.value)
-        frontend_statistic: DataFrame = frontend_errors[["name", "result"]].groupby("name", as_index=False).agg(
+        errors: DataFrame = get_statistic(ResultTypes.FAILED.value)
+        statistic: DataFrame = errors[["testcase_name", "result"]].groupby("testcase_name",
+                                                                                             as_index=False).agg(
             errors_count=("result", "count"))
-        return frontend_statistic
+        return statistic
 
     @staticmethod
     def create_log(log_to_mongo_db: bool = False, log_to_txt: bool = False, log_to_console: bool = False,
@@ -219,21 +226,21 @@ class ErrorLog:
                     response_stats: DataFrame = get_statistic(TestTypes.BACKEND.value, ResultTypes.SLOW.value,
                                                               ResultTypes.SUCCESSFUL.value)
                     generate_bar_chart_from_dataframe(
-                        data=response_stats, key_collumn="name",
+                        data=response_stats, key_collumn="description",
                         value_collumn="required_time", title="response time/endpoint",
                         show_fig=show_chart_summary,
                         save_fig=save_charts,
                         fig_directory=fig_directory / f'{get_current_time()}.svg', x_label="timecost(sec)",
                         y_label="endpoint")
                     generate_pie_chart_from_simple_dict(
-                        title="ERRORS/SUCCESSFUL TESTCASE RATIO",
+                        title="FAILED/SUCCESSFUL TESTCASE RATIO",
                         data=ErrorLog.get_error_numbers_in_dict(),
                         show_fig=show_chart_summary,
                         save_fig=save_charts,
                         fig_directory=fig_directory / f'{get_current_time()}.svg')
-                    generate_bar_chart_from_dataframe(title="FRONTEND ERORRS PER TESTCASE",
-                                                      data=ErrorLog.get_errors_per_frontendcases(),
-                                                      show_fig=show_chart_summary, key_collumn="name",
+                    generate_bar_chart_from_dataframe(title="ERRORS PER TESTCASE",
+                                                      data=ErrorLog.get_errors_per_testcase(),
+                                                      show_fig=show_chart_summary, key_collumn="testcase_name",
                                                       value_collumn="errors_count",
                                                       save_fig=save_charts,
                                                       fig_directory=fig_directory / f'{get_current_time()}.svg',
@@ -246,7 +253,8 @@ class ErrorLog:
                                                fig_directory=fig_directory / f'{get_current_time()}.svg')
                     generate_bar_chart_from_dataframe(
                         data=get_statistic(TestTypes.DATABASE.value, ResultTypes.FAILED.value,
-                                           ResultTypes.SUCCESSFUL.value, ResultTypes.SLOW.value), key_collumn="name",
+                                           ResultTypes.SUCCESSFUL.value, ResultTypes.SLOW.value),
+                        key_collumn="description",
                         value_collumn="required_time", title="QUERY TIMES",
                         show_fig=show_chart_summary,
                         save_fig=save_charts,
