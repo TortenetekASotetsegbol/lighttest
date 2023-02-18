@@ -47,8 +47,8 @@ class SumDatabaseTests:
                 "successful_queries": SumDatabaseTests.successful_queries}
 
 
-def new_testresult(name: str, result: str, test_type: str, required_time: float, description: str = ""):
-    result_post: UniversalPerformancePost = UniversalPerformancePost(testcase_name=name, result=result,
+def new_testresult(testcase_name: str, result: str, test_type: str, required_time: float, description: str = ""):
+    result_post: UniversalPerformancePost = UniversalPerformancePost(testcase_name=testcase_name, result=result,
                                                                      test_type=test_type,
                                                                      required_time=required_time,
                                                                      description=description)
@@ -56,7 +56,10 @@ def new_testresult(name: str, result: str, test_type: str, required_time: float,
 
 
 def get_statistics() -> DataFrame:
+    ErrorLog.result_summary
     return DataFrame.from_dict(ErrorLog.result_summary)
+
+
 
 
 def get_global_stats() -> DataFrame:
@@ -118,9 +121,9 @@ class ErrorLog:
             "total_testcase_count": len(statistics),
             "error_count": len(statistics.query(f'result == "{ResultTypes.FAILED.value}"')),
             "succesful_testcase_count": len(statistics.query(f'result == "{ResultTypes.SUCCESSFUL.value}"')),
-            "API_call_errors": ErrorLog.backend_errors,
-            "frontend_errors": ErrorLog.frontend_errors,
-            "database_errors": ErrorLog.database_errors
+            "errors": ErrorLog.errors
+            # "frontend_errors": ErrorLog.frontend_errors,
+            # "database_errors": ErrorLog.database_errors
 
         }
         return result
@@ -147,21 +150,7 @@ class ErrorLog:
             create.write(f"\n")
             create.write(f"\nAPI_CALL_ERRORS")
             create.write(f"\n-------------------------------------")
-            for error in ErrorLog.backend_errors:
-                create.write(f"\n********************")
-                create.write(f"\n\n{json.dumps(error, indent=4, default=str, ensure_ascii=False)}")
-                create.write(f"\n********************")
-            create.write(f"\n")
-            create.write(f"\nFRONTEND_ERRORS")
-            create.write(f"\n-------------------------------------")
-            for error in ErrorLog.frontend_errors:
-                create.write(f"\n********************")
-                create.write(f"\n\n{json.dumps(error, indent=4, default=str, ensure_ascii=False)}")
-                create.write(f"\n********************")
-            create.write(f"\n")
-            create.write(f"\nDATABASE_ERRORS")
-            create.write(f"\n-------------------------------------")
-            for error in ErrorLog.database_errors:
+            for error in ErrorLog.errors:
                 create.write(f"\n********************")
                 create.write(f"\n\n{json.dumps(error, indent=4, default=str, ensure_ascii=False)}")
                 create.write(f"\n********************")
@@ -194,9 +183,9 @@ class ErrorLog:
             A Dataframe that show how many errors occured per testcase
 
         """
-        errors: DataFrame = get_statistic(ResultTypes.FAILED.value)
+        errors: DataFrame = get_statistic(None,ResultTypes.FAILED.value)
         statistic: DataFrame = errors[["testcase_name", "result"]].groupby("testcase_name",
-                                                                                             as_index=False).agg(
+                                                                           as_index=False).agg(
             errors_count=("result", "count"))
         return statistic
 

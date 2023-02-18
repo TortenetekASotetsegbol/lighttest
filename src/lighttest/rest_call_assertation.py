@@ -94,9 +94,9 @@ def add_rest_api_step(testcase: Testcase, request_url: str, req_payload: json, r
                                       error_desc=error_desc, request_url=format_rest_uri(request_url))
 
     if testcase is not None:
-        testcase.add_case_step(step)
+        testcase.add_case_step(vars(step))
     else:
-        Testcase.add_global_case_step(step)
+        Testcase.add_global_case_step(vars(step))
 
 
 def result_evaluation(result: TestResult):

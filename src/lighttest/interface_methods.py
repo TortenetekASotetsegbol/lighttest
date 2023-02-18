@@ -24,7 +24,7 @@ from faker import Faker
 from lighttest.datacollections import CaseStep
 from lighttest.light_exceptions import NoneAction
 
-from src.lighttest.testcase import Testcase
+from lighttest.testcase import Testcase
 
 fake = Faker()
 

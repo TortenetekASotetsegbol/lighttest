@@ -1,4 +1,5 @@
 from functools import wraps
+from lighttest.test_summary import ErrorLog
 
 
 class Testcase:
@@ -14,19 +15,20 @@ class Testcase:
         self.critical_error: bool = False
 
     @staticmethod
-    def add_global_case_step(case_step: object):
+    def add_global_case_step(case_step: dict):
         Testcase.global_step_counter += 1
-        case_step.step_counter = Testcase.global_step_counter
-        Testcase.global_case_steps.append(vars(case_step))
+        case_step.update({"step_id": Testcase.global_step_counter})
+        Testcase.global_case_steps.append(case_step)
 
     def add_case_step(self, case_step: dict):
         self.step_counter += 1
         case_step.update({"step_id": self.step_counter})
-        self.case_steps.append(vars(case_step))
+        self.case_steps.append(case_step)
 
     def close_case(self):
         if self.error_counter > 0:
             ErrorLog.errors.append({self.case_name: self.case_steps})
+            ErrorLog.errors
         del self
 
     @staticmethod
