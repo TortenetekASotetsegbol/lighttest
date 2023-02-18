@@ -95,7 +95,7 @@ def testcase_logging(testcase_step) -> None:
             MiUsIn._take_a_screenshot(miusin)
 
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.FAILED.value,
-                              required_time=0, name=case_object.case_name)
+                              required_time=0, testcase_name=case_object.case_name)
         else:
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.SUCCESSFUL.value,
                               required_time=0, testcase_name=case_object.case_name)

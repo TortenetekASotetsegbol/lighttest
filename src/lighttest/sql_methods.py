@@ -91,7 +91,7 @@ def assertion(assertion_fun):
                      expected_result=expected_result,
                      assertion_type=assertion_fun.__name__, actual_result=actual_result)
 
-        new_testresult(testcase_name=sql_connection.testcase.casename, result=_get_testresult_type(error_detected, match),
+        new_testresult(testcase_name=sql_connection.testcase.case_name, result=_get_testresult_type(error_detected, match),
                        required_time=completed_kwargs["result_informations"].required_time,
                        test_type=TestTypes.DATABASE.value, description=alias)
 
