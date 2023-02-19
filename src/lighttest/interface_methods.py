@@ -108,14 +108,13 @@ def add_case_step(testcase: Testcase, step: object):
 
 
 class CaseManagement:
-    def __init__(self, testcase: Testcase, case_name: str, screenshots_container_directory: str = "C:\Screenshots"):
+    def __init__(self, testcase: Testcase, screenshots_container_directory: str = "C:\Screenshots"):
         self.local_click_xpaths: set[str] = {}
         self.local_field_xpaths: set[str] = {}
         self.teststep_count = 0
         self.testcase_failed: bool = False
         self.error_count: int = 0
         self.screenshots_container_directory: str = screenshots_container_directory
-        self.case_name = case_name
         self.steps_of_reproduction: dict = {}
         self.casebreak = False
         self.combobox_parent_finding_method_by_xpaths: set[str] = {}
@@ -128,7 +127,7 @@ class CaseManagement:
         frontend_errors - and the steps led to the error - into the log.
         """
         if self.error_in_case:
-            ErrorLog.add_frontend_error({self.case_name: self.steps_of_reproduction})
+            ErrorLog.add_frontend_error({self.testcase.case_name: self.steps_of_reproduction})
 
         del self
 
@@ -918,7 +917,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
     """
     action_driver: ActionChains = None
 
-    def __init__(self, testcase: Testcase, case_name: str, fullsize_windows=True,
+    def __init__(self, testcase: Testcase, fullsize_windows=True,
                  screenshots_container_directory: str = "C:\Screenshots"):
         """
         placeholder
@@ -928,7 +927,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
             screenshots_container_directory: If during a testcase it find an error
                     the screenshot taken of the error will be stored and catalogised in that directory
         """
-        super().__init__(testcase, case_name, screenshots_container_directory)
+        super().__init__(testcase, screenshots_container_directory)
 
         if MiUsIn.driver is None:
             MiUsIn.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
