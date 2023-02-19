@@ -2,6 +2,7 @@ import inspect
 from dataclasses import dataclass
 from enum import Enum, unique
 from functools import wraps
+from pathlib import Path
 
 from lighttest.test_summary import ErrorLog
 from lighttest_supplies import date_methods
@@ -54,20 +55,14 @@ def collect_data(mimic_fun):
             new_error = str(error)
             step_failed = True
 
-        if "data" not in completed_kwargs.keys():
-            completed_kwargs.update({"data": ""})
-        if "xpath" not in completed_kwargs.keys() or completed_kwargs["xpath"] is None:
-            completed_kwargs.update({"xpath": ""})
-        if "identifier" not in completed_kwargs.keys() or completed_kwargs["identifier"] is None:
-            completed_kwargs.update({"identifier": ""})
-
         step_datas = CaseStep(step_description=step_description,
                               step_positivity=step_positivity,
                               fatal_bug=major_bug,
-                              identifier=completed_kwargs['identifier'], xpath=completed_kwargs['xpath'],
+                              identifier=completed_kwargs.get("identifier", ""),
+                              xpath=completed_kwargs.get("xpath", ""),
                               step_failed=step_failed,
                               step_type=mimic_fun.__name__,
-                              data=completed_kwargs['data'], step_error=new_error)
+                              data=completed_kwargs.get("data", ""), step_error=new_error)
         return step_datas
 
     return collecting_data
@@ -283,7 +278,6 @@ class ClickMethods:
                 xpath = f"//*[contains(text(),'{identifier}')]"
         clickable_webelement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
         clickable_webelement.click()
-        MiUsIn.driver.start_tab_mirroring()
 
     @testcase_logging
     @collect_data
@@ -481,6 +475,33 @@ class FieldMethods:
             return "|".join(field_xpaths)
         else:
             return ""
+
+    @testcase_logging
+    @collect_data
+    def insert_file_path(self, data: str, xpath: str = "//input[@type='file']"):
+        """
+        Mimic the event of filling a field on a webpage.
+
+        Special Keywords:
+            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+
+            step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
+
+            step_description: optional. You can write a description, what about this step.
+
+            skip: if true, the method return without any action.
+
+        Arguments:
+            xpath: The field wehre you wnt to put the file-path
+            data: the file-path you want to put into the specified field.
+        """
+
+        if data is None:
+            raise NoneAction
+        file_path: str = str(Path(data).absolute())
+        file_path_field: WebElement = MiUsIn.driver.find_element(by=By.XPATH, value=xpath)
+        MiUsIn.driver.execute_script('arguments[0].style.display = "block";', file_path_field)
+        file_path_field.send_keys(file_path)
 
 
 class ValueValidation(FieldMethods):
@@ -802,6 +823,7 @@ class DropDownMethods:
 
         if xpath is None:
             xpath = self._create_field_xpath(identifier)
+            MiUsIn.driver.find_element(By.CSS_SELECTOR, )
 
         list_element = self._find_combobox_list_element(xpath, data)
         list_element.click()
