@@ -1,4 +1,8 @@
 from functools import wraps
+
+from src.lighttest.interface_methods import MiUsIn
+from lighttest.rest_calls import Calls
+from src.lighttest.sql_methods import SqlConnection
 from lighttest.test_summary import ErrorLog
 
 
@@ -13,6 +17,9 @@ class Testcase:
         self.case_steps: list[object] = list()
         self.error_counter: int = 0
         self.critical_error: bool = False
+        self.miusin: MiUsIn = None
+        self.http_request: Calls = None
+        self.sql: SqlConnection = None
 
     @staticmethod
     def add_global_case_step(case_step: dict):
@@ -31,6 +38,19 @@ class Testcase:
             ErrorLog.errors
         del self
 
+    def set_miusin(self):
+        self.miusin = MiUsIn(testcase=self)
+        return self.miusin
+
+    def set_http_request(self):
+        self.http_request = Calls(self)
+        return self.http_request
+
+    def set_sql(self, username: str, password: str, dialect_driver: str, dbname: str, host: str, port: str):
+        self.sql = SqlConnection(testcase=self, username=username, password=password, dialect_driver=dialect_driver,
+                                 dbname=dbname, host=host, port=port)
+        return self.sql
+
 
 # decorator
 def case_step(case_function):
@@ -45,7 +65,7 @@ def case_step(case_function):
     return method
 
 
-def case_method(case_method) -> object:
+def case_method(case_method):
     @wraps(case_method)
     def method(*args, **kwargs):
         arguments: list = list(args) + list(kwargs.values())
