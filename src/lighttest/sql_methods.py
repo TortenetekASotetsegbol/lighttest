@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from lighttest.datacollections import QueryResult, QueryErrorPost, TestTypes, ResultTypes, QueryAssertionResult
 
-from lighttest.testcase import Testcase
+from lighttest.testcase import Testcase, case_step
 
 
 # decorator
@@ -22,6 +22,7 @@ def execute_query(sql_query):
     """
 
     @wraps(sql_query)
+    @case_step
     def query_method(*args, **kwargs):
         con = None
         connection_object: SqlConnection = args[0]
@@ -44,7 +45,6 @@ def execute_query(sql_query):
 
 
 # decorator
-# decorator
 def assertion(assertion_fun):
     """
     It's a decorator. Use with methods that do assertion.
@@ -55,13 +55,16 @@ def assertion(assertion_fun):
     @wraps(assertion_fun)
     def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True,
                          performance_limit_in_seconds: float = 1,
-                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value,
-                         **kwargs) -> QueryAssertionResult:
+                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value, critical_error: bool = False,
+                         **kwargs) -> QueryAssertionResult | None:
         actual_result: list[dict] = []
         expected_result: list[dict] = []
 
         completed_kwargs: dict = signature.arguments
         completed_kwargs.update(kwargs)
+
+        if not contains_query_result(list(completed_kwargs.values()) + list(args)):
+            return None
 
         perf_l = signature.args
         acceptable_performance: bool = performance_check(sql_result=completed_kwargs["result_informations"],
@@ -81,6 +84,7 @@ def assertion(assertion_fun):
         error_detected: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
+        end_testcase(critical_error, error_detected, sql_connection.testcase)
 
         add_sql_step(testcase=sql_connection.testcase, alias=alias,
                      required_time=completed_kwargs["result_informations"].required_time,
@@ -91,7 +95,8 @@ def assertion(assertion_fun):
                      expected_result=expected_result,
                      assertion_type=assertion_fun.__name__, actual_result=actual_result)
 
-        new_testresult(testcase_name=sql_connection.testcase.case_name, result=_get_testresult_type(error_detected, match),
+        new_testresult(testcase_name=sql_connection.testcase.case_name,
+                       result=_get_testresult_type(error_detected, match),
                        required_time=completed_kwargs["result_informations"].required_time,
                        test_type=TestTypes.DATABASE.value, description=alias)
 
@@ -181,6 +186,8 @@ class SqlConnection:
         Check weather the result's and the expected result's length and the contained datas are exactly the same.
 
         Special keyword arguments:
+            critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                Default value: False
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
             performance_limit_in_seconds: Add a limit to query-response.
@@ -211,6 +218,8 @@ class SqlConnection:
         Check weather the expected result is the subset of the actual result.
 
         Special keyword arguments:
+            critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                Default value: False
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
             performance_limit_in_seconds: Add a limit to query-response.
@@ -243,6 +252,8 @@ class SqlConnection:
             Check weather the expected result is accepted by a custom assertion.
 
             Special keyword arguments:
+                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                    Default value: False
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
                 performance_limit_in_seconds: Add a limit to query-response.
@@ -275,6 +286,8 @@ class SqlConnection:
             compare and find which columns are different. Only the different columns appear in the error-logpost.
 
             Special keyword arguments:
+                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                    Default value: False
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
                 performance_limit_in_seconds: Add a limit to query-response.
@@ -324,8 +337,12 @@ class SqlConnection:
             compare and find which columns are different. Only the different columns appear in the error-logpost.
 
             Special keyword arguments:
-                show_actual_result: If true, the error-logpost will contains the full actual result of the query. Default value: True \n
-                show_expected_result: If true, the error-logpost will contains the expected result of the query. Default value: True
+                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                    Default value: False
+                show_actual_result: If true, the error-logpost will contains the full actual result of the query.
+                    Default value: True \n
+                show_expected_result: If true, the error-logpost will contains the expected result of the query.
+                    Default value: True
                 performance_limit_in_seconds: Add a limit to query-response.
                     If it cost more time than that, evaluated as failed query. default value: 1 second
                 positivity: it determinate how to evaulate the result.
@@ -467,3 +484,23 @@ def _format_list_element(element):
     _decimals_in_dict_to_int(new_dict)
 
     return new_dict
+
+
+def end_testcase(critical_testcase: bool, test_failed: bool, case_object: Testcase):
+    if critical_testcase and test_failed:
+        case_object.testcase.critical_error = True
+
+
+def contains_query_result(args_kwargs: list):
+    """
+    check wether a list contains a QueryResult object or not.
+
+    Return:
+        True, if it contains a QueryResult object.
+    """
+
+    for element in args_kwargs:
+        if isinstance(element, QueryResult):
+            return True
+
+    return False

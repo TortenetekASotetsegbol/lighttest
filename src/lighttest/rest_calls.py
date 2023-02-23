@@ -4,6 +4,7 @@ A mudulban található apihívás típusok: post, get (még bővíteni kell mini
 Minden hívás tartalmaz egy performancia tesztet is, amit a hívás után meghívva visszadja, hogy mennyi időt igényelt a hívíás elküldésétől számítva a response beérkezése
 """
 import copy
+from functools import wraps
 
 import requests
 
@@ -16,10 +17,13 @@ import aiohttp
 from lighttest.datacollections import BackendResultDatas
 from lighttest.rest_call_assertation import assertion
 
-from lighttest.testcase import Testcase
+from lighttest.testcase import Testcase, case_step
+
 
 
 def collect_call_request_data(request_function):
+    @wraps(request_function)
+    @case_step
     def rest_api_call(*args, **kwargs):
         call_object: Calls = args[0]
         start_time = perf_counter()
@@ -100,6 +104,7 @@ class Calls:
 
         return response
 
+    @case_step
     def put_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                              accepted_status_code: int = 200,
                              error_desc: str = "",
@@ -115,6 +120,7 @@ class Calls:
 
         return response
 
+    @case_step
     def get_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                              accepted_status_code: int = 200,
                              error_desc: str = "",
@@ -130,6 +136,7 @@ class Calls:
 
         return response
 
+    @case_step
     def delete_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                                 accepted_status_code: int = 200,
                                 error_desc: str = "",

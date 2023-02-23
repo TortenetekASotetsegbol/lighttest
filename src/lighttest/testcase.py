@@ -31,17 +31,43 @@ class Testcase:
             ErrorLog.errors
         del self
 
-    @staticmethod
-    def case_step(case_method):
-        # decorator
-        @wraps(case_method)
-        def method(*args, **kwargs):
-            testcase_object: Testcase = args[0].testcase
-            if testcase_object.critical_error:
-                return
 
-            case_method(*args, *kwargs)
+# decorator
+def case_step(case_function):
+    @wraps(case_function)
+    def method(*args, **kwargs):
+        testcase_object: Testcase = args[0].testcase
+        if testcase_object.critical_error:
+            return
 
+        return case_function(*args, **kwargs)
+
+    return method
+
+
+def case_method(case_method) -> object:
+    @wraps(case_method)
+    def method(*args, **kwargs):
+        arguments: list = list(args) + list(kwargs.values())
+        testcase: Testcase = find_testcase_object(arguments)
+
+        if testcase.critical_error:
             return None
 
-        return method
+        return_value = case_method(*args, **kwargs)
+
+        return return_value
+
+    return method
+
+
+def find_testcase_object(args_kwargs: list) -> Testcase:
+    """
+    Find and return the testcase object from a list.
+    If there is no Testcase object in the list, rise KeyError Exception.
+    """
+    for argumentum in args_kwargs:
+        if isinstance(argumentum, Testcase):
+            return argumentum
+
+    raise KeyError("Testcase object not found")

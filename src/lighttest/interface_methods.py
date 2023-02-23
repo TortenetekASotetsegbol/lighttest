@@ -25,7 +25,7 @@ from faker import Faker
 from lighttest.datacollections import CaseStep
 from lighttest.light_exceptions import NoneAction
 
-from lighttest.testcase import Testcase
+from lighttest.testcase import Testcase, case_step
 
 fake = Faker()
 
@@ -40,8 +40,7 @@ def collect_data(mimic_fun):
         completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
 
-        case_object: MiUsIn = args[0]
-        if case_object.casebreak or skip:
+        if skip:
             return None
 
         step_failed: bool = False
@@ -75,22 +74,28 @@ def testcase_logging(testcase_step) -> None:
     it analising that the teststep and the testcase weather failed or not and takes screenshots of the error.
     """
 
+    @case_step
     def asert(*args, **kwargs):
         miusin: MiUsIn = args[0]
         case_object = miusin.testcase
         step_datas: CaseStep = testcase_step(*args, **kwargs)
+
         if step_datas is None:
             return
-        add_case_step(case_object, step_datas)
 
-        if (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
-                not step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value):
+        add_case_step(case_object, step_datas)
+        failed: bool = (step_datas.step_failed and step_datas.step_positivity == Values.POSITIVE.value) or (
+                not step_datas.step_failed and step_datas.step_positivity == Values.NEGATIVE.value)
+
+        if failed:
             case_object.error_counter += 1
-            # case_object.casebreak_alarm(major_bug=step_datas.fatal_bug)
             MiUsIn._take_a_screenshot(miusin)
 
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.FAILED.value,
                               required_time=0, testcase_name=case_object.case_name)
+
+        if failed and step_datas.fatal_bug:
+            case_object.critical_error = True
         else:
             ts.new_testresult(test_type=TestTypes.FRONTEND.value, result=ResultTypes.SUCCESSFUL.value,
                               required_time=0, testcase_name=case_object.case_name)

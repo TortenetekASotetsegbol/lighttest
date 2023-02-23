@@ -48,6 +48,9 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
 
     Return: true, ha a teszteset sikeresnek lett elkönyvelve (a várt eredményt tapsztalta a funkció)
     """
+    if resp is None:
+        return None
+
     ass = RestTest(resp=resp, accepted_status_code=accepted_status_code, error_desc=error_desc,
                    positivity=positivity, timelimit_in_seconds=timelimit_in_seconds, attributes=attributes,
                    extra_asserts_accepted=boolsum([extra_assert(resp) for extra_assert in extra_asserts.values()]))
@@ -60,10 +63,10 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
                       statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
                       attributes=attributes, error_desc=error_desc, request_url=resp.url)
 
-    if not successful:
-        if raise_error:
-            # el.result_to_db()
-            raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
+    if not successful and raise_error:
+        # el.result_to_db()
+        resp.testcase.critical_error = True
+        # raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
 
     ts.new_testresult(result=result_evaluation(result), testcase_name=resp.testcase.case_name,
                       required_time=resp.response_time, test_type=TestTypes.BACKEND.value,
