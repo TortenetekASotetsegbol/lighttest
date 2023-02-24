@@ -35,7 +35,7 @@ def collect_data(mimic_fun):
     signature.apply_defaults()
 
     @wraps(mimic_fun)
-    def collecting_data(*args, step_positivity: str = Values.POSITIVE.value, major_bug: bool = False,
+    def collecting_data(*args, step_positivity: str = Values.POSITIVE.value, critical_step: bool = False,
                         step_description: str = "", skip: bool = False, **kwargs):
         completed_kwargs: dict = dict(signature.arguments)
         completed_kwargs.update(kwargs)
@@ -56,7 +56,7 @@ def collect_data(mimic_fun):
 
         step_datas = CaseStep(step_description=step_description,
                               step_positivity=step_positivity,
-                              fatal_bug=major_bug,
+                              fatal_bug=critical_step,
                               identifier=completed_kwargs.get("identifier", ""),
                               xpath=completed_kwargs.get("xpath", ""),
                               step_failed=step_failed,
@@ -258,7 +258,7 @@ class ClickMethods:
         Mimic a mouse click event as a case-step.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -290,7 +290,7 @@ class ClickMethods:
         Mimic a mouse click.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -322,7 +322,7 @@ class ClickMethods:
         Mimic a mouse click.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -350,7 +350,7 @@ class ClickMethods:
         Mimic a mouse click event as a case-step.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -402,7 +402,7 @@ class FieldMethods:
         Mimic the event of filling a field on a webpage.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -429,7 +429,7 @@ class FieldMethods:
         Mimic the event of filling a field on a webpage.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -487,7 +487,7 @@ class FieldMethods:
         Mimic the event of filling a field on a webpage.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -531,7 +531,7 @@ class ValueValidation(FieldMethods):
         """
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -597,7 +597,7 @@ class ValueValidation(FieldMethods):
         check a style param like color, font type, style, etc.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -666,7 +666,7 @@ class ValueValidation(FieldMethods):
         check a style param like color, font type, style, etc.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -691,7 +691,7 @@ class ValueValidation(FieldMethods):
         """
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -732,7 +732,7 @@ class ValueValidation(FieldMethods):
         If the website doesn't load under the timeout parameter, it recognised and logged as an error.
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -782,7 +782,7 @@ class DropDownMethods:
 
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -808,7 +808,7 @@ class DropDownMethods:
         use the combobox_parent_finding_method to click on a combobox elements
 
         Special Keywords:
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
 
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
 
@@ -972,8 +972,8 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
         screenshot_path = create_logging_structure(testcase.screenshots_container_directory, project_name)
         MiUsIn.driver.save_screenshot(f"{screenshot_path.absolute()}/{file_name}")
 
-    def casebreak_alarm(self, major_bug: bool):
-        if major_bug:
+    def casebreak_alarm(self, critical_step: bool):
+        if critical_step:
             self.casebreak = True
 
     def __add_default_field_xpaths(self, label: str, xpaths: list) -> None:
@@ -1002,7 +1002,7 @@ class MiUsIn(CaseManagement, ValueValidation, ClickMethods, DropDownMethods, Nav
 
         Arguments:
             identifier: a key-code whics is identifie a key
-            major_bug: if true and this case-step fail, the remain case-steps will be skipped
+            critical_step: if true and this case-step fail, the remain case-steps will be skipped
             step_positivity: determine what is the expected outcome of the step. If positive, it must be successful
             step_description: optional. You can write a description, what about this step.
 

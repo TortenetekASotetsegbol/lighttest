@@ -20,7 +20,6 @@ from lighttest.rest_call_assertation import assertion
 from lighttest.testcase import Testcase, case_step
 
 
-
 def collect_call_request_data(request_function):
     @wraps(request_function)
     @case_step
@@ -94,60 +93,57 @@ class Calls:
                               attributes: dict = dict(),
                               positivity: json = tt.POSITIVE.value,
                               timelimit_in_seconds=1,
-                              raise_error=False,
+                              critical_step=False,
                               **extra_asserts):
         response: Calls = self.post_call(uri_path, payload, param)
         assertion(resp=response, error_desc=error_desc, attributes=attributes,
                   positivity=positivity,
-                  raise_error=raise_error,
+                  critical_step=critical_step,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    @case_step
     def put_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                              accepted_status_code: int = 200,
                              error_desc: str = "",
                              attributes: dict = dict(),
                              positivity: json = tt.POSITIVE.value,
                              timelimit_in_seconds=1,
-                             raise_error=False,
+                             critical_step=False,
                              **extra_asserts):
         response: Calls = self.post_put(uri_path, payload, param)
         assertion(resp=response, error_desc=error_desc, attributes=attributes,
-                  positivity=positivity, raise_error=raise_error,
+                  positivity=positivity, critical_step=critical_step,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    @case_step
     def get_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                              accepted_status_code: int = 200,
                              error_desc: str = "",
                              attributes: dict = dict(),
                              positivity: json = tt.POSITIVE.value,
                              timelimit_in_seconds=1,
-                             raise_error=False,
+                             critical_step=False,
                              **extra_asserts):
         response: Calls = self.get_call(uri_path, payload, param)
         assertion(resp=response, error_desc=error_desc, attributes=attributes,
-                  positivity=positivity, raise_error=raise_error,
+                  positivity=positivity, critical_step=critical_step,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response
 
-    @case_step
     def delete_call_with_assert(self, uri_path: str, payload: dict, param: str = "",
                                 accepted_status_code: int = 200,
                                 error_desc: str = "",
                                 attributes: dict = dict(),
                                 positivity: json = tt.POSITIVE.value,
                                 timelimit_in_seconds=1,
-                                raise_error=False,
+                                critical_step=False,
                                 **extra_asserts):
         response: Calls = self.delete_call(uri_path, payload, param)
         assertion(resp=response, error_desc=error_desc, attributes=attributes,
-                  positivity=positivity, raise_error=raise_error,
+                  positivity=positivity, critical_step=critical_step,
                   timelimit_in_seconds=timelimit_in_seconds, accepted_status_code=accepted_status_code, **extra_asserts)
 
         return response

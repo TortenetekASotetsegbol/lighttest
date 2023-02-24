@@ -31,7 +31,7 @@ class RestTest:
 
 def assertion(resp: Calls, accepted_status_code: int = 200,
               error_desc: str = "", attributes: dict = dict(),
-              positivity: str = tt.POSITIVE.value, timelimit_in_seconds=1, raise_error=False, **extra_asserts):
+              positivity: str = tt.POSITIVE.value, timelimit_in_seconds=1, critical_step=False, **extra_asserts):
     """
 
 
@@ -63,10 +63,10 @@ def assertion(resp: Calls, accepted_status_code: int = 200,
                       statuscode=resp.status_code, perf=resp.response_time, positivity=positivity,
                       attributes=attributes, error_desc=error_desc, request_url=resp.url)
 
-    if not successful and raise_error:
-        # el.result_to_db()
+    if not successful and critical_step:
         resp.testcase.critical_error = True
-        # raise Exception(f'Testing workflow is can not be continued. error: {error_desc}')
+    if not successful:
+        resp.testcase.error_counter += 1
 
     ts.new_testresult(result=result_evaluation(result), testcase_name=resp.testcase.case_name,
                       required_time=resp.response_time, test_type=TestTypes.BACKEND.value,

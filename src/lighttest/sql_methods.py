@@ -55,7 +55,7 @@ def assertion(assertion_fun):
     @wraps(assertion_fun)
     def assertion_method(*args, show_actual_result: bool = True, show_expected_result: bool = True,
                          performance_limit_in_seconds: float = 1,
-                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value, critical_error: bool = False,
+                         attributes: dict = dict(), positivity: str = tt.POSITIVE.value, critical_step: bool = False,
                          **kwargs) -> QueryAssertionResult | None:
         actual_result: list[dict] = []
         expected_result: list[dict] = []
@@ -84,7 +84,10 @@ def assertion(assertion_fun):
         error_detected: bool = (positivity == tt.POSITIVE.value and (not match or not acceptable_performance)) or (
                 positivity == tt.NEGATIVE.value and match)
         alias: str = completed_kwargs["result_informations"].alias
-        end_testcase(critical_error, error_detected, sql_connection.testcase)
+        end_testcase(critical_step, error_detected, sql_connection.testcase)
+
+        if error_detected:
+            sql_connection.testcase.error_counter += 1
 
         add_sql_step(testcase=sql_connection.testcase, alias=alias,
                      required_time=completed_kwargs["result_informations"].required_time,
@@ -186,7 +189,7 @@ class SqlConnection:
         Check weather the result's and the expected result's length and the contained datas are exactly the same.
 
         Special keyword arguments:
-            critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+            critical_step: If true and this step failed on the assertion, the following casesteps will be skipped.
                 Default value: False
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
@@ -218,7 +221,7 @@ class SqlConnection:
         Check weather the expected result is the subset of the actual result.
 
         Special keyword arguments:
-            critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+            critical_step: If true and this step failed on the assertion, the following casesteps will be skipped.
                 Default value: False
             show_actual_result: If true, the error-logpost will contains the full result of the query.
                 Default value: True
@@ -252,7 +255,7 @@ class SqlConnection:
             Check weather the expected result is accepted by a custom assertion.
 
             Special keyword arguments:
-                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                critical_step: If true and this step failed on the assertion, the following casesteps will be skipped.
                     Default value: False
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
@@ -286,7 +289,7 @@ class SqlConnection:
             compare and find which columns are different. Only the different columns appear in the error-logpost.
 
             Special keyword arguments:
-                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                critical_step: If true and this step failed on the assertion, the following casesteps will be skipped.
                     Default value: False
                 show_actual_result: If true, the error-logpost will contains the full result of the query.
                     Default value: True
@@ -337,7 +340,7 @@ class SqlConnection:
             compare and find which columns are different. Only the different columns appear in the error-logpost.
 
             Special keyword arguments:
-                critical_error: If true and the this step failed on the assertion, the following casesteps will be skipped.
+                critical_step: If true and this step failed on the assertion, the following casesteps will be skipped.
                     Default value: False
                 show_actual_result: If true, the error-logpost will contains the full actual result of the query.
                     Default value: True \n
@@ -486,9 +489,9 @@ def _format_list_element(element):
     return new_dict
 
 
-def end_testcase(critical_testcase: bool, test_failed: bool, case_object: Testcase):
-    if critical_testcase and test_failed:
-        case_object.testcase.critical_error = True
+def end_testcase(critical_step: bool, test_failed: bool, case_object: Testcase):
+    if critical_step and test_failed:
+        case_object.critical_error = True
 
 
 def contains_query_result(args_kwargs: list):
