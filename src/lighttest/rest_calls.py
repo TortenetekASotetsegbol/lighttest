@@ -149,17 +149,17 @@ class Calls:
         return response
 
 
-async def post_req_task(uri_path, request: json, session):
+async def post_req_task(uri_path, request: dict, session):
     async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
         return await collect_async_data(resp=resp, request=request)
 
 
-async def get_req_task(uri_path, session, request: json, param=""):
+async def get_req_task(uri_path, session, request: dict, param=""):
     async with session.get(url=f'{cd.base_url}{uri_path}{param}') as resp:
         return await collect_async_data(resp=resp, request=request)
 
 
-async def put_req_task(uri_path, request: json, session):
+async def put_req_task(uri_path, request: dict, session):
     async with session.put(url=cd.base_url + uri_path, json=request) as resp:
         return await collect_async_data(resp=resp, request=request)
 
