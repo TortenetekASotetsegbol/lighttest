@@ -8,7 +8,6 @@ from functools import wraps
 
 import requests
 
-from lighttest.common_rest_call_datas import Common as cd
 from lighttest.http_headers import HttpHeaders
 from time import perf_counter
 from lighttest_supplies.encoding import binary_json_to_json
@@ -156,15 +155,15 @@ class Calls(HttpHeaders):
 
 
 async def post_req_task(uri_path, request: dict, session):
-    async with session.post(url=f'{cd.base_url}{uri_path}', json=request) as resp:
+    async with session.post(url=f'{Calls.global_base_url}{uri_path}', json=request) as resp:
         return await collect_async_data(resp=resp, request=request)
 
 
 async def get_req_task(uri_path, session, request: dict, param=""):
-    async with session.get(url=f'{cd.base_url}{uri_path}{param}') as resp:
+    async with session.get(url=f'{Calls.global_base_url}{uri_path}{param}') as resp:
         return await collect_async_data(resp=resp, request=request)
 
 
-async def put_req_task(uri_path, request: dict, session):
-    async with session.put(url=cd.base_url + uri_path, json=request) as resp:
+async def put_req_task(uri_path, session, request: dict, param=""):
+    async with session.put(url=f'{Calls.global_base_url}{uri_path}{param}', json=request) as resp:
         return await collect_async_data(resp=resp, request=request)

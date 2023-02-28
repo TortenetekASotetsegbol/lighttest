@@ -15,8 +15,8 @@ class HttpHeaders:
         self.token: str = ""
         self.headers: dict = None
 
-    @staticmethod
-    def set_global_token(new_token: str, update_headers=True) -> None:
+    @classmethod
+    def set_global_token(cls, new_token: str, update_headers=True) -> None:
         """
         Set in all endpointcall in the header's authorisation value: Bearer token to the new_token parameter
 
@@ -27,22 +27,22 @@ class HttpHeaders:
         """
         HttpHeaders.global_token = new_token
         if update_headers:
-            HttpHeaders.global_headers.update({"Authorization": f'Bearer {HttpHeaders.global_token}'})
+            cls.global_headers.update({"Authorization": f'Bearer {cls.global_token}'})
 
-    @staticmethod
-    def reset_global_headers() -> dict:
-        HttpHeaders.global_headers = {"Content-Type": "application/json",
+    @classmethod
+    def reset_global_headers(cls) -> dict:
+        cls.global_headers = {"Content-Type": "application/json",
                                       "Accept": "application/json",
-                                      "Authorization": f'Bearer {HttpHeaders.global_token}'
+                                      "Authorization": f'Bearer {cls.global_token}'
                                       }
 
-        return HttpHeaders.global_headers
+        return cls.global_headers
 
-    @staticmethod
-    def set_global_headers(new_headers: dict) -> None:
+    @classmethod
+    def set_global_headers(cls, new_headers: dict) -> None:
         """update the current headers in all endpointcall to the given new_header parameter"""
 
-        HttpHeaders.global_headers = new_headers
+        cls.global_headers = new_headers
 
     def set_token(self, new_token: str, update_headers=True) -> None:
         """
