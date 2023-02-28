@@ -74,10 +74,10 @@ class HttpHeaders:
         if self.base_url is not None:
             return self.base_url
         else:
-            return HttpHeaders.global_base_url
+            return self.global_base_url
 
     def get_headers(self):
         if self.headers is not None:
             return self.headers
         else:
-            return HttpHeaders.global_headers
+            return self.global_headers
