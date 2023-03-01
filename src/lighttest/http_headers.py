@@ -25,7 +25,7 @@ class HttpHeaders:
             update_headers: if false, it only update the token parameter,
                 but doesnt update the token value in the headers
         """
-        HttpHeaders.global_token = new_token
+        cls.global_token = new_token
         if update_headers:
             cls.global_headers.update({"Authorization": f'Bearer {cls.global_token}'})
 
@@ -59,7 +59,7 @@ class HttpHeaders:
             self.headers.update({"Authorization": f'Bearer {self.token}'})
 
     def reset_headers(self) -> dict:
-        HttpHeaders.headers = {"Content-Type": "application/json",
+        self.headers = {"Content-Type": "application/json",
                                "Accept": "application/json"
                                }
 

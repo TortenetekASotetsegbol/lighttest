@@ -18,4 +18,3 @@ src/lighttest.egg-info/PKG-INFO
 src/lighttest.egg-info/SOURCES.txt
 src/lighttest.egg-info/dependency_links.txt
 src/lighttest.egg-info/top_level.txt
-tests/test_new_call.py

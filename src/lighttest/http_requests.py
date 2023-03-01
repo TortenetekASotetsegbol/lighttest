@@ -68,7 +68,6 @@ class Calls(HttpHeaders):
         self.request: object = None
         self.response_json: dict = {}
         self.status_code: int = 0
-        self.headers: dict = {}
         self.url: str = ""
         self.testcase: Testcase = testcase
 
